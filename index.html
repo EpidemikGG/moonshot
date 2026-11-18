@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOONSHOT — Search-Rarity Sky Trivia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Dynamic Atmospheric Sky Backdrop & Starfield -->
+  <div id="sky-backdrop"></div>
+  <canvas id="starfield-canvas"></canvas>
+
+  <!-- Celestial Moon Target -->
+  <div class="moon-visual-wrap" id="moon-visual">
+    <div class="celestial-moon"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-logo">🚀</div>
+        <div>
+          <div class="brand-title">MOONSHOT</div>
+          <div class="brand-subtitle">Ascend to the Moon with low-search Google Keywords</div>
+        </div>
+      </div>
+
+      <div class="nav-controls">
+        <div class="mode-switch" role="tablist" aria-label="Game Mode">
+          <button class="mode-btn active" id="btn-mode-daily" type="button">📅 Daily Launch</button>
+          <button class="mode-btn" id="btn-mode-free" type="button">♾️ Free Play</button>
+        </div>
+        <button class="icon-btn" id="btn-how-to-play" type="button">❓ Rules & Tiers</button>
+        <button class="icon-btn" id="btn-sound-toggle" type="button">🔊 Sound: ON</button>
+      </div>
+    </header>
+
+    <!-- Main 2-Column Layout -->
+    <main class="game-layout">
+      <!-- Left Column: Sky-to-Moon Ascent Tower & Tier Key -->
+      <aside class="ascent-panel">
+        <div class="ascent-header">
+          <span class="ascent-title">Lunar Ascent</span>
+          <span class="altitude-readout" id="altitude-km">0 km</span>
+        </div>
+
+        <div class="altitude-track-container">
+          <div class="ascent-progress-fill" id="ascent-progress-bar" style="height: 0%;"></div>
+          <div class="rocket-token" id="rocket-token" style="bottom: 4%;">🚀</div>
+          <div class="altitude-zones" id="altitude-zones">
+            <div class="zone-marker" data-min="500">
+              <span>🌕 THE MOON (384,400 km)</span>
+              <span class="zone-pts">500 pts</span>
+            </div>
+            <div class="zone-marker" data-min="400">
+              <span>🛰️ Lunar Orbit</span>
+              <span class="zone-pts">400+</span>
+            </div>
+            <div class="zone-marker" data-min="300">
+              <span>🌌 Deep Space / ISS</span>
+              <span class="zone-pts">300+</span>
+            </div>
+            <div class="zone-marker" data-min="200">
+              <span>✨ Kármán Line</span>
+              <span class="zone-pts">200+</span>
+            </div>
+            <div class="zone-marker" data-min="100">
+              <span>🎈 Stratosphere</span>
+              <span class="zone-pts">100+</span>
+            </div>
+            <div class="zone-marker active-zone" data-min="0">
+              <span>☁️ Troposphere / Pad</span>
+              <span class="zone-pts">0+</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-mini-grid">
+          <div class="stat-box">
+            <div class="stat-label">Total Points</div>
+            <div class="stat-value"><span id="score-total">0</span> <small style="font-size:0.75rem;color:#94a3b8;">/ 500</small></div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Round</div>
+            <div class="stat-value"><span id="round-num">1</span> <small style="font-size:0.75rem;color:#94a3b8;">/ 10</small></div>
+          </div>
+        </div>
+
+        <!-- Keyword Tier Points Key -->
+        <div class="tier-legend">
+          <div class="tier-legend-title">Monthly Google Search Tiers</div>
+          <div class="tier-legend-list">
+            <div class="tier-pill-row">
+              <div class="tier-pill-left">
+                <span>💎</span>
+                <div>
+                  <div style="color:#38bdf8;">Diamond</div>
+                  <div class="tier-pill-desc">Ultra-niche monthly search</div>
+                </div>
+              </div>
+              <span class="tier-pill-pts" style="color:#38bdf8;">+50 pts</span>
+            </div>
+
+            <div class="tier-pill-row">
+              <div class="tier-pill-left">
+                <span>💠</span>
+                <div>
+                  <div style="color:#c084fc;">Platinum</div>
+                  <div class="tier-pill-desc">Still very rare search</div>
+                </div>
+              </div>
+              <span class="tier-pill-pts" style="color:#c084fc;">+40 pts</span>
+            </div>
+
+            <div class="tier-pill-row">
+              <div class="tier-pill-left">
+                <span>🥇</span>
+                <div>
+                  <div style="color:#fbbf24;">Gold</div>
+                  <div class="tier-pill-desc">Rare (&lt; monthly avg)</div>
+                </div>
+              </div>
+              <span class="tier-pill-pts" style="color:#fbbf24;">+30 pts</span>
+            </div>
+
+            <div class="tier-pill-row">
+              <div class="tier-pill-left">
+                <span>🥈</span>
+                <div>
+                  <div style="color:#cbd5e1;">Silver</div>
+                  <div class="tier-pill-desc">Common (~monthly avg)</div>
+                </div>
+              </div>
+              <span class="tier-pill-pts" style="color:#cbd5e1;">+20 pts</span>
+            </div>
+
+            <div class="tier-pill-row">
+              <div class="tier-pill-left">
+                <span>🥉</span>
+                <div>
+                  <div style="color:#f97316;">Bronze</div>
+                  <div class="tier-pill-desc">Very common search</div>
+                </div>
+              </div>
+              <span class="tier-pill-pts" style="color:#f97316;">+10 pts</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Column: Active Trivia Stage -->
+      <section class="stage-panel">
+        <!-- 10 Round Pips -->
+        <div class="rounds-strip" id="rounds-strip"></div>
+
+        <!-- Active Play Area -->
+        <div id="play-view">
+          <div class="question-meta-bar">
+            <div class="badge-group">
+              <span class="category-badge" id="q-category">Science</span>
+              <span class="avg-search-badge" title="Average monthly Google searches for valid keywords in this category">
+                🔍 Avg Monthly Keyword Searches: <strong id="q-avg-searches">245,000 / mo</strong>
+              </span>
+            </div>
+
+            <div class="timer-pill" id="timer-pill">
+              <span>⏱️</span>
+              <span id="timer-seconds">30s</span>
+            </div>
+          </div>
+
+          <div class="question-box" style="margin-top: 16px;">
+            <div class="round-label" id="q-round-label">ROUND 1 OF 10</div>
+            <h1 class="question-prompt" id="q-prompt">Name a chemical element on the periodic table</h1>
+            <p class="question-rule-sub">
+              Enter a <strong>1 or 2 word Keyword</strong>. Keywords searched <em>less</em> than this question's monthly Google average earn higher tiers!
+            </p>
+          </div>
+
+          <!-- Keyword Form -->
+          <form class="keyword-input-section" id="keyword-form" autocomplete="off" style="margin-top: 18px;">
+            <div class="input-wrapper">
+              <input
+                type="text"
+                id="keyword-input"
+                class="keyword-input"
+                placeholder="Type a 1 or 2 word keyword..."
+                maxlength="45"
+                autofocus
+              />
+              <span class="word-count-chip" id="word-count-chip">0/2 words</span>
+              <button type="submit" class="launch-btn" id="submit-kw-btn">IGNITE 🚀</button>
+            </div>
+
+            <div class="input-ActionRow">
+              <span class="feedback-msg" id="feedback-msg"></span>
+              <button type="button" class="skip-btn" id="skip-round-btn">Skip Stage (0 pts) ⏭️</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Post-Round Search Volume Reveal Card -->
+        <div class="reveal-card hidden" id="reveal-view">
+          <div class="reveal-top">
+            <div>
+              <div style="font-size:0.76rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">
+                Keyword Telemetry Locked
+              </div>
+              <div class="reveal-tier-badge" id="reveal-tier-badge">
+                💎 DIAMOND TIER
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="reveal-points-earned" id="reveal-points-text">+50 PTS</div>
+              <div style="font-size:0.8rem;color:#94a3b8;" id="reveal-tagline">Ultra-niche Google search this month!</div>
+            </div>
+          </div>
+
+          <div class="telemetry-comparison">
+            <div class="telemetry-row">
+              <span>Your Keyword: <strong id="reveal-user-kw" style="color:#fff;">Praseodymium</strong></span>
+              <span style="font-family:var(--font-mono);font-weight:700;" id="reveal-user-vol">2,900 searches / mo</span>
+            </div>
+            <div class="telemetry-bar-wrap">
+              <div class="telemetry-bar-fill" id="reveal-vol-bar" style="width: 15%; background: #38bdf8;"></div>
+            </div>
+            <div class="telemetry-row" style="color:#94a3b8;font-size:0.78rem;">
+              <span id="reveal-vs-avg-text">98.8% lower than question average!</span>
+              <span>Question Avg: <strong id="reveal-q-avg" style="color:#fbbf24;">245,000 / mo</strong></span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;margin-bottom:8px;font-weight:700;">
+              Monthly Google Search Spectrum for this Question
+            </div>
+            <div class="sample-tiers-grid" id="sample-tiers-grid"></div>
+          </div>
+
+          <button type="button" class="next-round-btn" id="next-round-btn">Next Stage (Round 2) →</button>
+        </div>
+
+        <!-- Final 10-Round Mission Summary -->
+        <div class="mission-summary hidden" id="summary-view">
+          <div>
+            <div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:#94a3b8;">10-Round Mission Complete</div>
+            <h2 class="mission-rank-title" id="summary-rank-title">LUNAR ORBIT COMMANDER</h2>
+            <p style="color:#cbd5e1;font-size:0.95rem;margin-top:4px;" id="summary-altitude-sub">
+              You reached 310,000 km with 410 / 500 points!
+            </p>
+          </div>
+
+          <div style="overflow-x:auto;">
+            <table class="mission-log-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Question</th>
+                  <th>Your Keyword</th>
+                  <th>Monthly Searches</th>
+                  <th>Tier</th>
+                  <th>Pts</th>
+                </tr>
+              </thead>
+              <tbody id="summary-table-body"></tbody>
+            </table>
+          </div>
+
+          <div class="summary-actions">
+            <button type="button" class="launch-btn" id="btn-share-score" style="padding:12px 22px;">📋 Copy Mission Telemetry</button>
+            <button type="button" class="next-round-btn" id="btn-play-again">🔄 Launch New Free Play Mission</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- How To Play Modal -->
+  <div class="modal-overlay hidden" id="rules-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size:1.25rem;font-weight:800;">🚀 How to Play MOONSHOT</h3>
+        <button type="button" class="skip-btn" id="close-rules-btn">✕ Close</button>
+      </div>
+      <div style="font-size:0.9rem;line-height:1.6;color:#cbd5e1;display:flex;flex-direction:column;gap:12px;">
+        <p>
+          Inspired by rarity-first trivia, <strong>MOONSHOT</strong> challenges you to ascend from Earth's launchpad all the way to <strong>The Moon (500 points / 384,400 km)</strong> across <strong>10 rounds</strong>.
+        </p>
+        <ul style="padding-left:20px;display:flex;flex-direction:column;gap:8px;">
+          <li><strong>1 or 2 Word Keywords:</strong> Every answer you submit must be <strong>1 or 2 words</strong> max.</li>
+          <li><strong>Monthly Google Search Scoring:</strong> Each question has a benchmark <em>Average Monthly Google Search Volume</em> across valid answers. If your valid keyword was searched <strong>less</strong> that month than the average, you earn higher tier points!</li>
+          <li><strong>5 Rarity Tiers:</strong>
+            <ul style="padding-left:18px;margin-top:6px;">
+              <li>💎 <strong>Diamond (50 pts):</strong> Ultra-niche Google search that month (almost impossible!)</li>
+              <li>💠 <strong>Platinum (40 pts):</strong> Still very rare monthly search volume</li>
+              <li>🥇 <strong>Gold (30 pts):</strong> Rare — searched less than the monthly question average</li>
+              <li>🥈 <strong>Silver (20 pts):</strong> Common — around the monthly question average</li>
+              <li>🥉 <strong>Bronze (10 pts):</strong> Very common — mainstream, high-volume Google search</li>
+            </ul>
+          </li>
+          <li><strong>30-Second Stage Timer:</strong> Unrecognized or &gt;2-word guesses let you keep trying until the 30s clock runs out!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
