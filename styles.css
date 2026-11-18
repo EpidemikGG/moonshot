@@ -1,17 +1,17 @@
 :root {
-  --bg-top: #02040a;
-  --surface: rgba(11, 18, 35, 0.68);
-  --border: rgba(255, 255, 255, 0.1);
-  --border-focus: rgba(255, 255, 255, 0.28);
-  --text: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --bg-deep: #041527;
+  --surface: rgba(7, 20, 38, 0.76);
+  --border: rgba(250, 227, 164, 0.16);
+  --border-focus: rgba(250, 227, 164, 0.38);
+  --text: #fbf6e8;
+  --text-secondary: #9cb3c9;
+  --text-muted: #647d96;
 
   --diamond: #38bdf8;
   --platinum: #c084fc;
-  --gold: #fbbf24;
+  --gold: #ffbe3d;
   --silver: #cbd5e1;
-  --bronze: #fb923c;
+  --bronze: #f58220;
   --danger: #f43f5e;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -28,243 +28,421 @@ html, body {
   min-height: 100vh;
   font-family: var(--font-sans);
   color: var(--text);
-  background: #02040a;
+  background: var(--bg-deep);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
-/* Krillion-style Vertical Scrolling Sky-to-Moon World */
+/* Full-Viewport Canvas for Twinkling 4-Point Stars, Meteors & Billowing Shuttle Exhaust */
+#cosmos-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 400vh Tall Vertical Sky-to-Moon World */
 #sky-world {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 300vh;
+  height: 400vh;
   z-index: 0;
   background: linear-gradient(
     180deg,
-    #000000 0%,
-    #030614 22%,
-    #071029 45%,
-    #0f214f 68%,
-    #1c3d7a 86%,
-    #38bdf8 100%
+    #01060e 0%,
+    #030d1c 25%,
+    #05182e 52%,
+    #072342 78%,
+    #0b3159 93%,
+    #184775 100%
   );
   transform: translateY(0vh);
-  transition: transform 1.25s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 1.35s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
 }
 
-#starfield-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.8;
-}
-
-/* Moon at Top of Vertical World */
-.moon-destination {
-  position: absolute;
-  top: 5vh;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.moon-sphere {
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 50%, #94a3b8 90%, #475569 100%);
-  box-shadow:
-    0 0 70px rgba(226, 232, 240, 0.55),
-    0 0 140px rgba(56, 189, 248, 0.25),
-    inset -14px -10px 24px rgba(15, 23, 42, 0.45);
-}
-
-.moon-label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  color: rgba(226, 232, 240, 0.75);
-  background: rgba(15, 23, 42, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  padding: 4px 12px;
-  border-radius: 999px;
-}
-
-/* Atmospheric Layer Horizon Lines in Sky */
-.sky-layer-tag {
+.world-zone {
   position: absolute;
   left: 0;
   right: 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-  padding: 0 28px 6px;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: rgba(226, 232, 240, 0.35);
-  text-align: right;
+  height: 75vh;
+  pointer-events: none;
 }
 
-.earth-horizon {
+.zone-horizon-line {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 110px;
-  background: linear-gradient(180deg, rgba(56, 189, 248, 0) 0%, rgba(15, 23, 42, 0.65) 100%);
+  border-bottom: 1px dashed rgba(250, 227, 164, 0.14);
+  padding: 0 36px 8px;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 14px;
+  justify-content: flex-start;
 }
 
-.launchpad-ground {
+.zone-horizon-line span {
   font-family: var(--font-mono);
   font-size: 0.68rem;
+  font-weight: 700;
   letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* Left-Edge Krillion-Style Altitude Ruler */
-.altitude-ruler {
-  position: fixed;
-  left: 22px;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 68vh;
-  width: 56px;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.ruler-track {
-  position: relative;
-  width: 3px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.1);
+  color: rgba(250, 227, 164, 0.42);
+  background: rgba(4, 21, 39, 0.6);
+  padding: 3px 10px;
   border-radius: 999px;
 }
 
-.ruler-fill {
+/* Launchpad Vintage Clouds at 0vh */
+.launch-clouds-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 250px;
+  filter: drop-shadow(0 -8px 25px rgba(245, 166, 56, 0.2));
+}
+
+/* Animated Sky Drifters (Balloons, Planes, ISS, Satellites, Asteroids) */
+.drifter {
+  position: absolute;
+  font-size: 1.9rem;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  opacity: 0.88;
+}
+
+.balloon-1 {
+  bottom: 24vh;
+  left: 12%;
+  font-size: 2.2rem;
+  animation: bobFloat 5s ease-in-out infinite alternate;
+}
+
+.jet-plane {
+  bottom: 40vh;
+  left: -10%;
+  font-size: 1.7rem;
+  animation: flyAcrossRight 26s linear infinite;
+}
+
+.iss-station {
+  bottom: 28vh;
+  left: -10%;
+  font-size: 2.5rem;
+  animation: flyAcrossRight 32s linear infinite;
+}
+
+.sputnik-sat {
+  bottom: 52vh;
+  right: -10%;
+  font-size: 1.8rem;
+  animation: flyAcrossLeft 28s linear infinite;
+}
+
+.asteroid-1 {
+  bottom: 22vh;
+  right: -10%;
+  font-size: 2.1rem;
+  animation: flyAcrossLeft 22s linear infinite;
+}
+
+.asteroid-2 {
+  bottom: 48vh;
+  left: 16%;
+  font-size: 1.8rem;
+  animation: spinFloat 14s linear infinite;
+}
+
+.ufo-easter {
+  bottom: 62vh;
+  left: -10%;
+  font-size: 1.7rem;
+  animation: flyAcrossRight 19s ease-in-out infinite;
+}
+
+@keyframes bobFloat {
+  from { transform: translateY(-10px) rotate(-3deg); }
+  to { transform: translateY(10px) rotate(4deg); }
+}
+
+@keyframes flyAcrossRight {
+  from { transform: translateX(0vw); }
+  to { transform: translateX(115vw); }
+}
+
+@keyframes flyAcrossLeft {
+  from { transform: translateX(0vw); }
+  to { transform: translateX(-115vw); }
+}
+
+@keyframes spinFloat {
+  from { transform: rotate(0deg) translateY(-6px); }
+  to { transform: rotate(360deg) translateY(6px); }
+}
+
+/* Soft Stratosphere Cloud Wisps */
+.cloud-wisps {
+  position: absolute;
+  width: 260px;
+  height: 44px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, rgba(250, 227, 164, 0.14), transparent 70%);
+  filter: blur(8px);
+}
+.wisp-1 { bottom: 16vh; left: 8%; animation: bobFloat 7s ease-in-out infinite alternate; }
+.wisp-2 { bottom: 35vh; left: 32%; animation: bobFloat 9s ease-in-out infinite alternate-reverse; }
+
+/* Shimmering Aurora Borealis at Karman Line */
+.aurora-ribbon {
+  position: absolute;
+  bottom: 18vh;
+  left: -10%;
+  width: 120%;
+  height: 130px;
+  background: linear-gradient(90deg, transparent 5%, rgba(16, 185, 129, 0.18) 30%, rgba(56, 189, 248, 0.22) 60%, rgba(192, 132, 252, 0.16) 85%, transparent 100%);
+  filter: blur(22px);
+  transform: skewY(-5deg);
+  animation: auroraPulse 6s ease-in-out infinite alternate;
+}
+
+.aurora-2 {
+  bottom: 34vh;
+  transform: skewY(4deg);
+  animation-delay: 3s;
+}
+
+@keyframes auroraPulse {
+  from { opacity: 0.45; transform: skewY(-5deg) scaleY(0.9); }
+  to { opacity: 0.95; transform: skewY(-3deg) scaleY(1.2); }
+}
+
+/* Giant Textured Moon at 345vh */
+.giant-moon {
+  position: absolute;
+  bottom: 14vh;
+  left: 24%;
+  transform: translateX(-50%);
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #fffdf5 0%, #f5e8c7 48%, #cbb88e 82%, #8c7a56 100%);
+  box-shadow:
+    0 0 80px rgba(250, 227, 164, 0.5),
+    0 0 160px rgba(56, 189, 248, 0.25),
+    inset -18px -14px 32px rgba(15, 23, 42, 0.5);
+}
+
+.crater {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(120, 104, 74, 0.26);
+  box-shadow: inset 2px 2px 5px rgba(15, 23, 42, 0.35);
+}
+.c1 { width: 38px; height: 38px; top: 38px; left: 95px; }
+.c2 { width: 26px; height: 26px; top: 96px; left: 44px; }
+.c3 { width: 18px; height: 18px; top: 125px; left: 112px; }
+.c4 { width: 14px; height: 14px; top: 52px; left: 48px; }
+
+/* === Main 2-Column Split Viewport === */
+.viewport-grid {
+  position: relative;
+  z-index: 5;
+  max-width: 1160px;
+  margin: 0 auto;
+  height: 100vh;
+  padding: 20px 28px;
+  display: grid;
+  grid-template-columns: 1fr 520px;
+  gap: 28px;
+  align-items: center;
+}
+
+/* Left Column: Giant Space Shuttle Flight Showcase */
+.flight-showcase {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Vertical Altitude Gauge on Far Left */
+.altitude-gauge {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.gauge-top-icon,
+.gauge-bot-icon {
+  font-size: 1.15rem;
+}
+
+.gauge-track {
+  position: relative;
+  flex: 1;
+  width: 5px;
+  background: rgba(250, 227, 164, 0.14);
+  border-radius: 999px;
+}
+
+.gauge-fill {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
   height: 2%;
-  background: linear-gradient(180deg, var(--diamond), var(--platinum), var(--gold));
+  background: linear-gradient(180deg, #38bdf8, #ffbe3d, #e65c19);
   border-radius: 999px;
-  box-shadow: 0 0 12px var(--diamond);
-  transition: height 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 14px rgba(255, 190, 61, 0.7);
+  transition: height 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.ruler-tick {
+.gauge-tick {
   position: absolute;
-  left: 10px;
+  left: 12px;
   transform: translateY(50%);
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: rgba(250, 227, 164, 0.5);
   white-space: nowrap;
 }
 
-/* Background Starship Actor (Rises/Dips with Points) */
+/* Milestone Toast Banner */
+.milestone-banner {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(7, 20, 38, 0.88);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 7px 16px;
+  border-radius: 999px;
+  box-shadow: 0 0 24px rgba(255, 190, 61, 0.35);
+  white-space: nowrap;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Giant Space Shuttle Stage */
+.shuttle-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .starship-actor {
-  position: fixed;
-  left: calc(50% + 335px);
-  bottom: 8vh;
-  z-index: 4;
+  position: absolute;
+  left: 52%;
+  bottom: 7vh;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  pointer-events: none;
-  transition: bottom 1.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s ease;
+  transition: bottom 1.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .starship-svg-wrap {
-  filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.45));
-  animation: shipHover 2.6s ease-in-out infinite alternate;
+  filter: drop-shadow(0 14px 32px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 28px rgba(255, 153, 20, 0.35));
+  animation: shuttleIdle 2.4s ease-in-out infinite alternate;
 }
 
-@keyframes shipHover {
-  from { transform: translateY(-4px); }
-  to { transform: translateY(4px); }
+.shuttle-svg {
+  display: block;
+}
+
+#thruster-outer {
+  transform-origin: 120px 232px;
+  animation: flameFlicker 0.14s ease-in-out infinite alternate;
+}
+
+@keyframes flameFlicker {
+  from { transform: scaleY(0.94) scaleX(0.97); }
+  to { transform: scaleY(1.08) scaleX(1.03); }
+}
+
+@keyframes shuttleIdle {
+  from { transform: translateY(-6px); }
+  to { transform: translateY(6px); }
 }
 
 .starship-actor.boosting .starship-svg-wrap {
-  animation: shipBoost 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: shuttleLaunchSurge 1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes shipBoost {
+@keyframes shuttleLaunchSurge {
   0% { transform: scale(1) translateY(0); }
-  35% { transform: scale(1.18) translateY(-18px); }
+  30% { transform: scale(1.14) translateY(-28px); filter: drop-shadow(0 0 45px rgba(255, 190, 61, 0.9)); }
   100% { transform: scale(1) translateY(0); }
 }
 
 .starship-actor.stalling .starship-svg-wrap {
-  animation: shipStall 0.65s ease;
+  animation: shuttleTurbulence 0.7s ease;
 }
 
-@keyframes shipStall {
+@keyframes shuttleTurbulence {
   0% { transform: translateY(0) rotate(0deg); }
-  30% { transform: translateY(14px) rotate(-8deg); }
-  65% { transform: translateY(10px) rotate(6deg); }
+  25% { transform: translateY(16px) rotate(-6deg); }
+  60% { transform: translateY(10px) rotate(5deg); }
   100% { transform: translateY(0) rotate(0deg); }
 }
 
 .starship-boost-pop {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 800;
-  padding: 3px 9px;
+  padding: 5px 14px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid var(--diamond);
-  color: var(--diamond);
+  background: rgba(7, 20, 38, 0.92);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  margin-bottom: 6px;
+  box-shadow: 0 0 20px rgba(255, 190, 61, 0.4);
   white-space: nowrap;
-  animation: popFloat 1.2s ease forwards;
 }
 
-@keyframes popFloat {
-  0% { opacity: 0; transform: translateY(8px) scale(0.9); }
-  20% { opacity: 1; transform: translateY(0) scale(1); }
-  80% { opacity: 1; transform: translateY(-6px); }
-  100% { opacity: 0; transform: translateY(-12px); }
-}
-
-.starship-alt-tag {
+.shuttle-telemetry-pill {
+  margin-top: -12px;
+  background: rgba(4, 15, 29, 0.88);
+  border: 1px solid rgba(250, 227, 164, 0.28);
+  padding: 5px 14px;
+  border-radius: 999px;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #e2e8f0;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  padding: 2px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
+  color: #fae3a4;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
-/* Centered Single-Column Shell */
+.telemetry-sep {
+  opacity: 0.45;
+}
+
+/* === Right Column: Minimalist Game Shell === */
 .shell {
-  position: relative;
-  z-index: 5;
-  max-width: 550px;
-  margin: 0 auto;
-  padding: 24px 20px 36px;
-  height: 100vh;
+  height: 100%;
+  max-height: 760px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
 }
 
-/* Minimal Header */
 .header {
   display: flex;
   align-items: center;
@@ -275,19 +453,30 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
-  font-size: 1.05rem;
+  font-weight: 900;
+  font-size: 1.1rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #fff;
+  color: #fae3a4;
 }
 
 .brand-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--diamond);
-  box-shadow: 0 0 12px var(--diamond);
+  background: #e65c19;
+  box-shadow: 0 0 12px #ff9914;
+}
+
+.streak-pill {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: rgba(230, 92, 25, 0.22);
+  border: 1px solid #ff9914;
+  color: #ffbe3d;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
 }
 
 .header-actions {
@@ -298,7 +487,7 @@ html, body {
 
 .seg-control {
   display: inline-flex;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(7, 20, 38, 0.75);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px;
@@ -308,7 +497,7 @@ html, body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 5px 12px;
   border-radius: 999px;
@@ -317,7 +506,7 @@ html, body {
 }
 
 .seg-btn.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: #e65c19;
   color: #fff;
 }
 
@@ -325,7 +514,7 @@ html, body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(7, 20, 38, 0.75);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   font-size: 0.82rem;
@@ -342,16 +531,16 @@ html, body {
   border-color: var(--border-focus);
 }
 
-/* Sleek Status Card */
+/* Compact Mission Progress Card */
 .altitude-bar-card {
   background: var(--surface);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 13px 18px;
+  padding: 12px 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
 .altitude-top-row {
@@ -361,8 +550,8 @@ html, body {
 }
 
 .altitude-zone-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.73rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
@@ -378,7 +567,7 @@ html, body {
 .altitude-km {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #fff;
+  color: #fae3a4;
 }
 
 .altitude-pts {
@@ -386,7 +575,6 @@ html, body {
   color: var(--diamond);
 }
 
-/* 10 Minimalist Round Dots */
 .rounds-dots {
   display: flex;
   gap: 6px;
@@ -394,14 +582,14 @@ html, body {
 
 .pip {
   flex: 1;
-  height: 4px;
+  height: 5px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   transition: all 0.3s ease;
 }
 
 .pip.current {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(250, 227, 164, 0.55);
 }
 
 .pip.done-DIAMOND { background: var(--diamond); box-shadow: 0 0 8px var(--diamond); }
@@ -417,8 +605,8 @@ html, body {
   backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 34px 30px 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  padding: 32px 28px 26px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   position: relative;
   overflow: hidden;
 }
@@ -438,20 +626,20 @@ html, body {
   width: 60px;
   height: 60px;
   border-radius: 18px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(230, 92, 25, 0.16);
+  border: 1px solid rgba(255, 190, 61, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+  font-size: 1.85rem;
+  box-shadow: 0 0 30px rgba(230, 92, 25, 0.28);
 }
 
 .start-title {
-  font-size: 1.7rem;
+  font-size: 1.75rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: #fbf6e8;
 }
 
 .start-desc {
@@ -469,7 +657,7 @@ html, body {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
-  background: rgba(7, 11, 22, 0.55);
+  background: rgba(4, 14, 26, 0.6);
   border: 1px solid var(--border);
   padding: 8px 16px;
   border-radius: 999px;
@@ -479,21 +667,21 @@ html, body {
   margin-top: 4px;
   width: 100%;
   max-width: 260px;
-  background: #ffffff;
-  color: #050814;
+  background: linear-gradient(135deg, #ff9914, #e65c19);
+  color: #ffffff;
   border: none;
   border-radius: 999px;
-  padding: 14px 30px;
+  padding: 15px 30px;
   font-size: 0.98rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 0 28px rgba(255, 255, 255, 0.22);
+  box-shadow: 0 6px 28px rgba(230, 92, 25, 0.45);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .play-hero-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 34px rgba(56, 189, 248, 0.45);
+  box-shadow: 0 10px 36px rgba(255, 153, 20, 0.65);
 }
 
 /* Thin Top Timer Bar */
@@ -509,7 +697,7 @@ html, body {
 .timer-line-fill {
   height: 100%;
   width: 100%;
-  background: var(--diamond);
+  background: var(--gold);
   transition: width 1s linear, background-color 0.3s ease;
 }
 
@@ -522,12 +710,39 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+
+.hint-pill-btn {
+  background: rgba(255, 190, 61, 0.12);
+  border: 1px solid rgba(255, 190, 61, 0.35);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hint-pill-btn:hover {
+  background: rgba(255, 190, 61, 0.22);
+}
+
+.hint-banner {
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 190, 61, 0.1);
+  border: 1px solid rgba(255, 190, 61, 0.3);
+  color: #fae3a4;
+  font-size: 0.8rem;
+  animation: fadeIn 0.2s ease;
 }
 
 .timer-readout {
@@ -539,32 +754,31 @@ html, body {
   color: var(--danger);
 }
 
-/* Prompt Typography */
 .prompt-title {
-  font-size: 1.55rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
   line-height: 1.32;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: #fbf6e8;
   margin-bottom: 8px;
 }
 
 .prompt-sub {
   font-size: 0.83rem;
   color: var(--text-secondary);
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .prompt-sub strong {
-  color: #e2e8f0;
-  font-weight: 600;
+  color: #fae3a4;
+  font-weight: 700;
 }
 
 /* Minimalist Floating Input Pill */
 .input-pill {
   display: flex;
   align-items: center;
-  background: rgba(7, 11, 22, 0.78);
+  background: rgba(4, 13, 25, 0.82);
   border: 1px solid var(--border-focus);
   border-radius: 16px;
   padding: 6px 6px 6px 18px;
@@ -572,8 +786,8 @@ html, body {
 }
 
 .input-pill:focus-within {
-  border-color: var(--diamond);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 190, 61, 0.15);
 }
 
 .input-pill.error {
@@ -614,19 +828,19 @@ html, body {
 .word-counter.invalid { color: var(--danger); }
 
 .submit-btn {
-  background: #fff;
-  color: #090d16;
+  background: linear-gradient(135deg, #ff9914, #e65c19);
+  color: #fff;
   border: none;
   border-radius: 12px;
   padding: 10px 18px;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 .submit-btn:hover {
-  opacity: 0.92;
+  opacity: 0.94;
   transform: translateY(-1px);
 }
 
@@ -635,8 +849,8 @@ html, body {
   margin-top: 12px;
   padding: 10px 14px;
   border-radius: 12px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.38);
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.42);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -698,7 +912,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 18px;
+  gap: 16px;
   animation: fadeIn 0.28s ease;
 }
 
@@ -722,11 +936,11 @@ html, body {
 }
 
 .reveal-kw-title {
-  font-size: 1.9rem;
+  font-size: 1.85rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   text-transform: capitalize;
-  color: #fff;
+  color: #fbf6e8;
 }
 
 .reveal-stat-line {
@@ -736,11 +950,10 @@ html, body {
 }
 
 .reveal-stat-line strong {
-  color: #fff;
+  color: #fae3a4;
   font-family: var(--font-mono);
 }
 
-/* Minimal 3-Column Comparison Strip */
 .spectrum-row {
   width: 100%;
   display: grid;
@@ -752,7 +965,7 @@ html, body {
 }
 
 .spectrum-cell {
-  background: rgba(7, 11, 22, 0.45);
+  background: rgba(4, 13, 25, 0.55);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 12px;
@@ -785,19 +998,19 @@ html, body {
 
 .primary-wide-btn {
   width: 100%;
-  background: #fff;
-  color: #090d16;
+  background: linear-gradient(135deg, #ff9914, #e65c19);
+  color: #fff;
   border: none;
   border-radius: 14px;
   padding: 13px 20px;
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.15s;
 }
 
 .primary-wide-btn:hover {
-  opacity: 0.92;
+  opacity: 0.94;
   transform: translateY(-1px);
 }
 
@@ -805,16 +1018,16 @@ html, body {
 .summary-box {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   text-align: center;
   animation: fadeIn 0.3s ease;
 }
 
 .summary-score-big {
   font-family: var(--font-mono);
-  font-size: 2.5rem;
+  font-size: 2.4rem;
   font-weight: 800;
-  color: #fff;
+  color: #fae3a4;
   line-height: 1;
 }
 
@@ -822,7 +1035,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 240px;
+  max-height: 220px;
   overflow-y: auto;
   text-align: left;
   padding-right: 4px;
@@ -833,7 +1046,7 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(7, 11, 22, 0.45);
+  background: rgba(4, 13, 25, 0.55);
   border: 1px solid var(--border);
   border-radius: 10px;
   font-size: 0.82rem;
@@ -862,13 +1075,12 @@ html, body {
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* Subtle Bottom Tier Key Bar */
 .footer-tiers {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   color: var(--text-secondary);
 }
 
@@ -889,7 +1101,7 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(3, 6, 16, 0.75);
+  background: rgba(2, 8, 18, 0.78);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -898,7 +1110,7 @@ html, body {
 }
 
 .modal-sheet {
-  background: #0d1527;
+  background: #07172b;
   border: 1px solid var(--border-focus);
   border-radius: 22px;
   max-width: 440px;
@@ -921,28 +1133,18 @@ html, body {
   display: none !important;
 }
 
-@media (max-width: 960px) {
-  .starship-actor {
-    left: auto;
-    right: 16px;
-  }
-  .altitude-ruler {
-    display: none;
-  }
-}
-
-@media (max-width: 560px) {
-  .stage-card {
-    padding: 26px 18px 22px;
-  }
-  .prompt-title {
-    font-size: 1.32rem;
-  }
-  .spectrum-row {
+@media (max-width: 920px) {
+  .viewport-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: 220px 1fr;
+    gap: 10px;
+    padding: 14px 16px;
   }
   .starship-actor {
-    transform: scale(0.78);
-    right: 6px;
+    transform: translateX(-50%) scale(0.62);
+    bottom: -35px !important;
+  }
+  .altitude-gauge {
+    height: 180px;
   }
 }
