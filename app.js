@@ -19,6 +19,7 @@
   // DOM Elements
   const skyBackdrop = document.getElementById("sky-backdrop");
   const moonVisual = document.getElementById("moon-visual");
+  const altitudeCard = document.getElementById("altitude-card");
   const zoneNameEl = document.getElementById("zone-name");
   const altitudeKmEl = document.getElementById("altitude-km");
   const ascentProgressBar = document.getElementById("ascent-progress-bar");
@@ -227,6 +228,7 @@
     totalPoints = 0;
     roundHistory = [];
 
+    if (altitudeCard) altitudeCard.classList.add("hidden");
     timerTrackEl.classList.add("hidden");
     playView.classList.add("hidden");
     revealView.classList.add("hidden");
@@ -253,6 +255,7 @@
     startView.classList.add("hidden");
     summaryView.classList.add("hidden");
     revealView.classList.add("hidden");
+    if (altitudeCard) altitudeCard.classList.remove("hidden");
     playView.classList.remove("hidden");
 
     updateAltitudeVisuals();
