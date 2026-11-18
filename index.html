@@ -54,12 +54,32 @@
 
     <!-- Center Stage Card -->
     <main class="stage-card">
-      <div class="timer-line-track">
+      <div class="timer-line-track hidden" id="timer-track">
         <div class="timer-line-fill" id="timer-bar"></div>
       </div>
 
+      <!-- Pre-Game Start View -->
+      <div class="start-box" id="start-view">
+        <div class="start-emblem">🚀</div>
+        <h1 class="start-title">Ascend to the Moon</h1>
+        <p class="start-desc">
+          10 rounds · 1–2 word answers · 30s per question.<br />
+          Keywords searched <strong>less</strong> on Google this month than the question's average score higher points.
+        </p>
+
+        <div class="start-tier-strip">
+          <span style="color:var(--diamond)">💎 50p</span>
+          <span style="color:var(--platinum)">💠 40p</span>
+          <span style="color:var(--gold)">🥇 30p</span>
+          <span style="color:var(--silver)">🥈 20p</span>
+          <span style="color:var(--bronze)">🥉 10p</span>
+        </div>
+
+        <button type="button" class="play-hero-btn" id="btn-start-game">▶ Play</button>
+      </div>
+
       <!-- Active Round View -->
-      <div id="play-view">
+      <div class="hidden" id="play-view">
         <div class="stage-meta">
           <span><span id="q-category">Science</span> · Round <span id="round-num">1</span>/10</span>
           <span class="timer-readout" id="timer-seconds">30s</span>

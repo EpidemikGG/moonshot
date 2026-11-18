@@ -27,8 +27,11 @@
   const roundNumEl = document.getElementById("round-num");
   const roundsStripEl = document.getElementById("rounds-strip");
 
+  const timerTrackEl = document.getElementById("timer-track");
   const timerBarEl = document.getElementById("timer-bar");
   const timerSecondsEl = document.getElementById("timer-seconds");
+  const startView = document.getElementById("start-view");
+  const btnStartGame = document.getElementById("btn-start-game");
   const playView = document.getElementById("play-view");
   const revealView = document.getElementById("reveal-view");
   const summaryView = document.getElementById("summary-view");
@@ -199,18 +202,40 @@
     moonVisual.style.opacity = String(0.28 + ratio * 0.55);
   }
 
-  function renderRoundPips() {
+  function renderRoundPips(isStarted = true) {
     roundsStripEl.innerHTML = "";
     for (let i = 0; i < TOTAL_ROUNDS; i++) {
       const pip = document.createElement("div");
       pip.className = "pip";
       if (i < roundHistory.length) {
         pip.classList.add(`done-${roundHistory[i].tierId || "MISS"}`);
-      } else if (i === currentRoundIdx) {
+      } else if (isStarted && i === currentRoundIdx) {
         pip.classList.add("current");
       }
       roundsStripEl.appendChild(pip);
     }
+  }
+
+  function showStartScreen(mode) {
+    clearInterval(timerInterval);
+    roundActive = false;
+    gameMode = mode || gameMode;
+    btnModeDaily.classList.toggle("active", gameMode === "daily");
+    btnModeFree.classList.toggle("active", gameMode === "free");
+
+    currentRoundIdx = 0;
+    totalPoints = 0;
+    roundHistory = [];
+
+    timerTrackEl.classList.add("hidden");
+    playView.classList.add("hidden");
+    revealView.classList.add("hidden");
+    summaryView.classList.add("hidden");
+    startView.classList.remove("hidden");
+
+    btnStartGame.textContent = gameMode === "daily" ? "▶ Play Daily Launch" : "▶ Play Free Play";
+    updateAltitudeVisuals();
+    renderRoundPips(false);
   }
 
   function startMission(mode) {
@@ -225,6 +250,7 @@
     totalPoints = 0;
     roundHistory = [];
 
+    startView.classList.add("hidden");
     summaryView.classList.add("hidden");
     revealView.classList.add("hidden");
     playView.classList.remove("hidden");
@@ -246,12 +272,13 @@
     feedbackMsgEl.textContent = "";
     updateWordCountChip();
 
+    startView.classList.add("hidden");
     revealView.classList.add("hidden");
     summaryView.classList.add("hidden");
     playView.classList.remove("hidden");
-    timerBarEl.parentElement.classList.remove("hidden");
+    timerTrackEl.classList.remove("hidden");
 
-    renderRoundPips();
+    renderRoundPips(true);
     startTimer();
     setTimeout(() => keywordInput.focus(), 40);
   }
@@ -464,9 +491,10 @@
     });
   });
 
+  btnStartGame.addEventListener("click", () => startMission(gameMode));
   btnPlayAgain.addEventListener("click", () => startMission("free"));
-  btnModeDaily.addEventListener("click", () => startMission("daily"));
-  btnModeFree.addEventListener("click", () => startMission("free"));
+  btnModeDaily.addEventListener("click", () => showStartScreen("daily"));
+  btnModeFree.addEventListener("click", () => showStartScreen("free"));
 
   btnHowToPlay.addEventListener("click", () => rulesModal.classList.remove("hidden"));
   closeRulesBtn.addEventListener("click", () => rulesModal.classList.add("hidden"));
@@ -516,5 +544,5 @@
   }
 
   initStarfield();
-  startMission("daily");
+  showStartScreen("daily");
 })();

@@ -272,6 +272,81 @@ html, body {
   overflow: hidden;
 }
 
+/* Pre-Game Start View */
+.start-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 8px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.start-emblem {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+}
+
+.start-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.start-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 420px;
+}
+
+.start-tier-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: rgba(7, 11, 22, 0.5);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  margin: 4px 0;
+}
+
+.play-hero-btn {
+  margin-top: 6px;
+  width: 100%;
+  max-width: 260px;
+  background: #ffffff;
+  color: #050814;
+  border: none;
+  border-radius: 999px;
+  padding: 15px 32px;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.play-hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 34px rgba(56, 189, 248, 0.45);
+}
+
 /* Thin Top Timer Bar */
 .timer-line-track {
   position: absolute;
