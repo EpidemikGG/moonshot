@@ -1,4 +1,4 @@
-// MOONSHOT — Minimalist Core Game Engine
+// MOONSHOT — Minimalist Core Game Engine (v5)
 (function () {
   const TOTAL_ROUNDS = 10;
   const MAX_POINTS = 500;
@@ -15,15 +15,19 @@
   let roundActive = false;
   let soundEnabled = true;
   let audioCtx = null;
+  let pendingTypoEntry = null;
 
   // DOM Elements
-  const skyBackdrop = document.getElementById("sky-backdrop");
-  const moonVisual = document.getElementById("moon-visual");
+  const skyWorld = document.getElementById("sky-world");
+  const rulerFill = document.getElementById("ruler-fill");
+  const starshipActor = document.getElementById("starship-actor");
+  const starshipBoostPop = document.getElementById("starship-boost-pop");
+  const starshipAltTag = document.getElementById("starship-alt-tag");
+  const thrusterOuter = document.getElementById("thruster-outer");
+
   const altitudeCard = document.getElementById("altitude-card");
   const zoneNameEl = document.getElementById("zone-name");
   const altitudeKmEl = document.getElementById("altitude-km");
-  const ascentProgressBar = document.getElementById("ascent-progress-bar");
-  const rocketToken = document.getElementById("rocket-token");
   const scoreTotalEl = document.getElementById("score-total");
   const roundNumEl = document.getElementById("round-num");
   const roundsStripEl = document.getElementById("rounds-strip");
@@ -45,6 +49,8 @@
   const inputPill = document.getElementById("input-pill");
   const keywordInput = document.getElementById("keyword-input");
   const wordCountChip = document.getElementById("word-count-chip");
+  const typoSuggestionBox = document.getElementById("typo-suggestion-box");
+  const typoWordBtn = document.getElementById("typo-word-btn");
   const feedbackMsgEl = document.getElementById("feedback-msg");
   const skipRoundBtn = document.getElementById("skip-round-btn");
 
@@ -119,6 +125,69 @@
     return copy;
   }
 
+  // Damerau-Levenshtein Edit Distance (handles 1 or 2 wrong/missing/extra/swapped letters)
+  function editDistance(a, b) {
+    const lenA = a.length;
+    const lenB = b.length;
+    if (Math.abs(lenA - lenB) > 2) return 99;
+
+    const dp = Array.from({ length: lenA + 1 }, () => new Array(lenB + 1).fill(0));
+    for (let i = 0; i <= lenA; i++) dp[i][0] = i;
+    for (let j = 0; j <= lenB; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= lenA; i++) {
+      for (let j = 1; j <= lenB; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,      // deletion
+          dp[i][j - 1] + 1,      // insertion
+          dp[i - 1][j - 1] + cost // substitution
+        );
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+          dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + cost); // transposition
+        }
+      }
+    }
+    return dp[lenA][lenB];
+  }
+
+  function matchAnswer(question, rawInput) {
+    const norm = normalizeText(rawInput);
+    if (!norm) return null;
+    const candidates = new Set([norm]);
+    if (norm.endsWith("ies") && norm.length > 4) candidates.add(norm.slice(0, -3) + "y");
+    if (norm.endsWith("es") && norm.length > 3) candidates.add(norm.slice(0, -2));
+    if (norm.endsWith("s") && norm.length > 2) candidates.add(norm.slice(0, -1));
+    else candidates.add(norm + "s");
+    if (norm.startsWith("the ")) candidates.add(norm.slice(4));
+
+    for (const entry of question.answers) {
+      if (candidates.has(normalizeText(entry.k))) return entry;
+    }
+    return null;
+  }
+
+  // Find closest answer if user got 1 or 2 letters wrong
+  function findCloseTypoMatch(question, rawInput) {
+    const norm = normalizeText(rawInput);
+    if (!norm || norm.length < 3) return null;
+
+    let bestEntry = null;
+    let bestDist = 3; // Only allow distance 1 or 2
+
+    for (const entry of question.answers) {
+      const target = normalizeText(entry.k);
+      // Avoid suggesting a completely different 3-letter word at distance 2
+      const maxAllowed = Math.min(target.length, norm.length) <= 4 ? 1 : 2;
+      const dist = editDistance(norm, target);
+      if (dist >= 1 && dist <= maxAllowed && dist < bestDist) {
+        bestDist = dist;
+        bestEntry = entry;
+      }
+    }
+    return bestEntry;
+  }
+
   function playSound(type) {
     if (!soundEnabled) return;
     try {
@@ -151,32 +220,17 @@
     } catch (e) {}
   }
 
-  function matchAnswer(question, rawInput) {
-    const norm = normalizeText(rawInput);
-    if (!norm) return null;
-    const candidates = new Set([norm]);
-    if (norm.endsWith("ies") && norm.length > 4) candidates.add(norm.slice(0, -3) + "y");
-    if (norm.endsWith("es") && norm.length > 3) candidates.add(norm.slice(0, -2));
-    if (norm.endsWith("s") && norm.length > 2) candidates.add(norm.slice(0, -1));
-    else candidates.add(norm + "s");
-    if (norm.startsWith("the ")) candidates.add(norm.slice(4));
-
-    for (const entry of question.answers) {
-      if (candidates.has(normalizeText(entry.k))) return entry;
-    }
-    return null;
-  }
-
   function getZoneLabel(pts) {
     if (pts >= 500) return "🌕 The Moon";
     if (pts >= 400) return "🛰️ Lunar Orbit";
     if (pts >= 300) return "🌌 Deep Space";
     if (pts >= 200) return "✨ Kármán Line";
     if (pts >= 100) return "🎈 Stratosphere";
-    return "🌍 Troposphere";
+    return "🌍 Launchpad";
   }
 
-  function updateAltitudeVisuals() {
+  // Krillion-style Background Starship & Sky World Ascent
+  function updateAltitudeVisuals(lastPointsEarned = null) {
     const ratio = Math.min(1, Math.max(0, totalPoints / MAX_POINTS));
     const currentKm = Math.round(ratio * MOON_DISTANCE_KM);
 
@@ -184,23 +238,57 @@
     altitudeKmEl.textContent = `${formatNumber(currentKm)} km`;
     scoreTotalEl.textContent = String(totalPoints);
 
-    const pct = Math.round(ratio * 100);
-    ascentProgressBar.style.width = `${pct}%`;
-    rocketToken.style.left = `${pct}%`;
-
-    if (totalPoints < 100) {
-      skyBackdrop.style.background = "linear-gradient(180deg, #071128 0%, #102554 60%, #1e3f7c 100%)";
-    } else if (totalPoints < 250) {
-      skyBackdrop.style.background = "linear-gradient(180deg, #040917 0%, #0d1838 60%, #1a1b4b 100%)";
-    } else if (totalPoints < 400) {
-      skyBackdrop.style.background = "linear-gradient(180deg, #02040a 0%, #070d20 65%, #0f172a 100%)";
-    } else {
-      skyBackdrop.style.background = "linear-gradient(180deg, #000000 0%, #050811 70%, #1e293b 100%)";
+    // 1. Scroll the 300vh vertical sky world downward so we ascend from Earth (0vh) to the Moon (200vh)
+    const worldShiftVh = (ratio * 200).toFixed(2);
+    if (skyWorld) {
+      skyWorld.style.transform = `translateY(${worldShiftVh}vh)`;
     }
 
-    const moonScale = 0.85 + ratio * 0.65;
-    moonVisual.style.transform = `translateX(-50%) scale(${moonScale.toFixed(2)})`;
-    moonVisual.style.opacity = String(0.28 + ratio * 0.55);
+    // 2. Update Left-Edge Altitude Ruler
+    if (rulerFill) {
+      rulerFill.style.height = `${Math.max(2, Math.round(ratio * 95))}%`;
+    }
+
+    // 3. Position Background Starship vertically (from 8vh at 0 pts up to 76vh at 500 pts)
+    if (starshipActor) {
+      // If user just scored 0 pts after already being in flight, dip slightly
+      let shipBottomVh = 8 + ratio * 68;
+      if (lastPointsEarned === 0 && totalPoints > 0) {
+        shipBottomVh = Math.max(8, shipBottomVh - 3.5);
+      }
+      starshipActor.style.bottom = `${shipBottomVh.toFixed(1)}vh`;
+      starshipAltTag.textContent = `${formatNumber(currentKm)} km`;
+
+      // Animate Starship Boost or Stall based on points earned
+      starshipActor.classList.remove("boosting", "stalling");
+      void starshipActor.offsetWidth;
+
+      if (lastPointsEarned !== null) {
+        if (lastPointsEarned > 0) {
+          starshipActor.classList.add("boosting");
+          starshipBoostPop.textContent = `+${lastPointsEarned} PTS 🚀`;
+          starshipBoostPop.classList.remove("hidden");
+          // Scale thruster flame based on points (10 to 50)
+          const flameScale = 0.8 + (lastPointsEarned / 50) * 0.9;
+          if (thrusterOuter) {
+            thrusterOuter.style.transformOrigin = "32px 68px";
+            thrusterOuter.style.transform = `scaleY(${flameScale.toFixed(2)})`;
+          }
+        } else {
+          starshipActor.classList.add("stalling");
+          starshipBoostPop.textContent = `0 PTS · STALL`;
+          starshipBoostPop.classList.remove("hidden");
+          if (thrusterOuter) {
+            thrusterOuter.style.transform = "scaleY(0.4)";
+          }
+        }
+      } else {
+        starshipBoostPop.classList.add("hidden");
+        if (thrusterOuter) {
+          thrusterOuter.style.transform = "scaleY(1)";
+        }
+      }
+    }
   }
 
   function renderRoundPips(isStarted = true) {
@@ -217,6 +305,13 @@
     }
   }
 
+  function hideTypoSuggestion() {
+    pendingTypoEntry = null;
+    if (typoSuggestionBox) {
+      typoSuggestionBox.classList.add("hidden");
+    }
+  }
+
   function showStartScreen(mode) {
     clearInterval(timerInterval);
     roundActive = false;
@@ -227,6 +322,7 @@
     currentRoundIdx = 0;
     totalPoints = 0;
     roundHistory = [];
+    hideTypoSuggestion();
 
     if (altitudeCard) altitudeCard.classList.add("hidden");
     timerTrackEl.classList.add("hidden");
@@ -236,7 +332,7 @@
     startView.classList.remove("hidden");
 
     btnStartGame.textContent = gameMode === "daily" ? "▶ Play Daily Launch" : "▶ Play Free Play";
-    updateAltitudeVisuals();
+    updateAltitudeVisuals(null);
     renderRoundPips(false);
   }
 
@@ -258,7 +354,7 @@
     if (altitudeCard) altitudeCard.classList.remove("hidden");
     playView.classList.remove("hidden");
 
-    updateAltitudeVisuals();
+    updateAltitudeVisuals(null);
     loadCurrentRound();
   }
 
@@ -273,6 +369,7 @@
 
     keywordInput.value = "";
     feedbackMsgEl.textContent = "";
+    hideTypoSuggestion();
     updateWordCountChip();
 
     startView.classList.add("hidden");
@@ -320,8 +417,19 @@
 
   keywordInput.addEventListener("input", () => {
     updateWordCountChip();
+    hideTypoSuggestion();
     if (feedbackMsgEl.textContent) feedbackMsgEl.textContent = "";
   });
+
+  // Clicking the suggested corrected word submits it immediately
+  if (typoWordBtn) {
+    typoWordBtn.addEventListener("click", () => {
+      if (!roundActive || !pendingTypoEntry) return;
+      const entry = pendingTypoEntry;
+      hideTypoSuggestion();
+      handleRoundComplete(entry, false);
+    });
+  }
 
   keywordForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -343,13 +451,26 @@
     const currentQ = missionQuestions[currentRoundIdx];
     const matched = matchAnswer(currentQ, raw);
 
-    if (!matched) {
-      triggerError(`"${raw}" not recognized — try another`);
-      playSound("ERROR");
+    if (matched) {
+      hideTypoSuggestion();
+      handleRoundComplete(matched, false);
       return;
     }
 
-    handleRoundComplete(matched, false);
+    // Check if the user got 1 or 2 letters wrong
+    const closeMatch = findCloseTypoMatch(currentQ, raw);
+    if (closeMatch) {
+      pendingTypoEntry = closeMatch;
+      typoWordBtn.textContent = closeMatch.k;
+      typoSuggestionBox.classList.remove("hidden");
+      feedbackMsgEl.textContent = "";
+      playSound("SILVER");
+      return;
+    }
+
+    hideTypoSuggestion();
+    triggerError(`"${raw}" not recognized — try another`);
+    playSound("ERROR");
   });
 
   function triggerError(msg) {
@@ -366,6 +487,7 @@
   function handleRoundComplete(matchedEntry, timedOut) {
     roundActive = false;
     clearInterval(timerInterval);
+    hideTypoSuggestion();
 
     const currentQ = missionQuestions[currentRoundIdx];
     let earnedPts = 0;
@@ -408,8 +530,8 @@
       points: earnedPts
     });
 
-    updateAltitudeVisuals();
-    renderRoundPips();
+    updateAltitudeVisuals(earnedPts);
+    renderRoundPips(true);
     renderCompactSpectrum(currentQ);
 
     nextRoundBtn.textContent =
@@ -459,7 +581,7 @@
   }
 
   function showMissionSummary() {
-    timerBarEl.parentElement.classList.add("hidden");
+    timerTrackEl.classList.add("hidden");
     revealView.classList.add("hidden");
     playView.classList.add("hidden");
     summaryView.classList.remove("hidden");
@@ -517,17 +639,17 @@
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      stars = Array.from({ length: 85 }, () => ({
+      stars = Array.from({ length: 90 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: Math.random() * 1.3 + 0.3,
+        r: Math.random() * 1.4 + 0.3,
         alpha: Math.random() * 0.65 + 0.15,
         speed: Math.random() * 0.25 + 0.05
       }));
     }
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const mult = 1 + (totalPoints / MAX_POINTS) * 3;
+      const mult = 1 + (totalPoints / MAX_POINTS) * 3.5;
       for (const s of stars) {
         s.y += s.speed * mult;
         if (s.y > canvas.height) {

@@ -7,16 +7,79 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
-  <div id="sky-backdrop"></div>
-  <canvas id="starfield-canvas"></canvas>
-  <div class="moon-ambient" id="moon-visual"></div>
+  <!-- Krillion-style Vertical Scrolling Sky-to-Moon World -->
+  <div id="sky-world">
+    <canvas id="starfield-canvas"></canvas>
 
+    <!-- Celestial Moon at Top of World -->
+    <div class="moon-destination" id="moon-visual">
+      <div class="moon-sphere"></div>
+      <div class="moon-label">384,400 KM · THE MOON</div>
+    </div>
+
+    <!-- Atmospheric Layer Markers in the Background Sky -->
+    <div class="sky-layer-tag" style="bottom: 82%;">🛰️ 300,000 KM · LUNAR ORBIT</div>
+    <div class="sky-layer-tag" style="bottom: 62%;">🌌 200,000 KM · DEEP SPACE</div>
+    <div class="sky-layer-tag" style="bottom: 42%;">✨ 100,000 KM · KÁRMÁN LINE</div>
+    <div class="sky-layer-tag" style="bottom: 22%;">🎈 50,000 KM · STRATOSPHERE</div>
+    <div class="earth-horizon">
+      <div class="clouds-strip"></div>
+      <div class="launchpad-ground">🌍 0 KM · LAUNCHPAD</div>
+    </div>
+  </div>
+
+  <!-- Left-Edge Krillion-Style Vertical Altitude Ruler -->
+  <aside class="altitude-ruler" aria-hidden="true">
+    <div class="ruler-track">
+      <div class="ruler-fill" id="ruler-fill"></div>
+      <div class="ruler-tick" style="bottom: 95%;"><span>🌕 500p</span></div>
+      <div class="ruler-tick" style="bottom: 76%;"><span>400p</span></div>
+      <div class="ruler-tick" style="bottom: 57%;"><span>300p</span></div>
+      <div class="ruler-tick" style="bottom: 38%;"><span>200p</span></div>
+      <div class="ruler-tick" style="bottom: 19%;"><span>100p</span></div>
+      <div class="ruler-tick" style="bottom: 2%;"><span>🌍 0p</span></div>
+    </div>
+  </aside>
+
+  <!-- Interactive Background Starship that Rises/Dips with Every Answer -->
+  <div class="starship-actor" id="starship-actor">
+    <div class="starship-boost-pop hidden" id="starship-boost-pop">+50 PTS</div>
+    <div class="starship-svg-wrap" id="starship-svg-wrap">
+      <svg viewBox="0 0 64 96" width="54" height="80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Thruster Plume -->
+        <path id="thruster-outer" d="M22 68 C22 84, 32 95, 32 95 C32 95, 42 84, 42 68 Z" fill="url(#plumeGrad)" opacity="0.85"/>
+        <path id="thruster-core" d="M26 68 C26 78, 32 87, 32 87 C32 87, 38 78, 38 68 Z" fill="#ffffff"/>
+        <!-- Fins -->
+        <path d="M18 46 L6 64 L20 62 Z" fill="#38bdf8"/>
+        <path d="M46 46 L58 64 L44 62 Z" fill="#38bdf8"/>
+        <!-- Main Fuselage -->
+        <path d="M32 6 C20 20, 18 42, 20 64 L44 64 C46 42, 44 20, 32 6 Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Nose Cone -->
+        <path d="M32 6 C26 13, 23 20, 22 24 L42 24 C41 20, 38 13, 32 6 Z" fill="#38bdf8"/>
+        <!-- Cockpit Window -->
+        <circle cx="32" cy="36" r="6.5" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+        <circle cx="30" cy="34" r="2" fill="#e0f2fe"/>
+        <!-- Engine Nozzle -->
+        <rect x="24" y="64" width="16" height="5" rx="2" fill="#475569"/>
+        <defs>
+          <linearGradient id="plumeGrad" x1="32" y1="68" x2="32" y2="95" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#38bdf8"/>
+            <stop offset="60%" stop-color="#6366f1"/>
+            <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="starship-alt-tag" id="starship-alt-tag">0 km</div>
+  </div>
+
+  <!-- Centered Minimalist UI Shell -->
   <div class="shell">
-    <!-- Top Section: Minimal Header + Sleek Altitude Bar (hidden until Play is clicked) -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
+    <!-- Top Section: Minimal Header + Sleek Status Bar -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
       <header class="header">
         <div class="brand">
           <span class="brand-dot"></span>
@@ -33,21 +96,15 @@
         </div>
       </header>
 
-      <!-- Sleek Sky-to-Moon Progress Card (only shown once game starts) -->
+      <!-- Compact Flight Status Bar (shown once Play is clicked) -->
       <section class="altitude-bar-card hidden" id="altitude-card">
         <div class="altitude-top-row">
-          <span class="altitude-zone-label" id="zone-name">🌍 Troposphere</span>
+          <span class="altitude-zone-label" id="zone-name">🌍 Launchpad</span>
           <div class="altitude-metrics">
             <span class="altitude-km" id="altitude-km">0 km</span>
             <span class="altitude-pts"><span id="score-total">0</span>/500 pts</span>
           </div>
         </div>
-
-        <div class="flight-track">
-          <div class="flight-fill" id="ascent-progress-bar"></div>
-          <div class="flight-shuttle" id="rocket-token">🚀</div>
-        </div>
-
         <div class="rounds-dots" id="rounds-strip"></div>
       </section>
     </div>
@@ -64,7 +121,7 @@
         <h1 class="start-title">Ascend to the Moon</h1>
         <p class="start-desc">
           10 rounds · 1–2 word answers · 30s per question.<br />
-          Keywords searched <strong>less</strong> on Google this month than the question's average score higher points.
+          Keywords searched <strong>less</strong> on Google this month launch your starship higher toward the Moon.
         </p>
 
         <div class="start-tier-strip">
@@ -101,6 +158,12 @@
             />
             <span class="word-counter" id="word-count-chip">0/2</span>
             <button type="submit" class="submit-btn">Submit</button>
+          </div>
+
+          <!-- Typo Suggestion Prompt ("Are you reffering to this word:") -->
+          <div class="typo-suggestion hidden" id="typo-suggestion-box">
+            <span>Are you reffering to this word:</span>
+            <button type="button" class="typo-word-btn" id="typo-word-btn"></button>
           </div>
 
           <div class="stage-footer">
@@ -160,19 +223,19 @@
         <button type="button" class="text-link-btn" id="close-rules-btn" style="font-size:1rem;">✕</button>
       </div>
       <p style="font-size:0.86rem;line-height:1.55;color:var(--text-secondary);">
-        Ascend from Earth to the Moon across <strong>10 rounds</strong>. Answer each question in <strong>1 or 2 words</strong>. Valid keywords with fewer monthly Google searches than the question's average score higher points:
+        Ascend from Earth to the Moon across <strong>10 rounds</strong>. Answer each question in <strong>1 or 2 words</strong>. Valid keywords with fewer monthly Google searches than the question's average launch your starship higher:
       </p>
       <div>
-        <div class="modal-tier-row"><span style="color:var(--diamond);font-weight:600;">💎 Diamond</span><span>50 pts · Ultra-niche</span></div>
-        <div class="modal-tier-row"><span style="color:var(--platinum);font-weight:600;">💠 Platinum</span><span>40 pts · Very rare</span></div>
-        <div class="modal-tier-row"><span style="color:var(--gold);font-weight:600;">🥇 Gold</span><span>30 pts · Below avg</span></div>
-        <div class="modal-tier-row"><span style="color:var(--silver);font-weight:600;">🥈 Silver</span><span>20 pts · Common</span></div>
-        <div class="modal-tier-row" style="border:none;"><span style="color:var(--bronze);font-weight:600;">🥉 Bronze</span><span>10 pts · Very common</span></div>
+        <div class="modal-tier-row"><span style="color:var(--diamond);font-weight:600;">💎 Diamond</span><span>50 pts · Huge boost</span></div>
+        <div class="modal-tier-row"><span style="color:var(--platinum);font-weight:600;">💠 Platinum</span><span>40 pts · Big boost</span></div>
+        <div class="modal-tier-row"><span style="color:var(--gold);font-weight:600;">🥇 Gold</span><span>30 pts · Medium boost</span></div>
+        <div class="modal-tier-row"><span style="color:var(--silver);font-weight:600;">🥈 Silver</span><span>20 pts · Small boost</span></div>
+        <div class="modal-tier-row" style="border:none;"><span style="color:var(--bronze);font-weight:600;">🥉 Bronze</span><span>10 pts · Minimal boost</span></div>
       </div>
     </div>
   </div>
 
-  <script src="questions.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="questions.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

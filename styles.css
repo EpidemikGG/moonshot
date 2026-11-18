@@ -1,9 +1,7 @@
 :root {
-  --bg-top: #050814;
-  --bg-bottom: #132347;
-  --surface: rgba(15, 23, 42, 0.55);
-  --surface-hover: rgba(30, 41, 59, 0.65);
-  --border: rgba(255, 255, 255, 0.09);
+  --bg-top: #02040a;
+  --surface: rgba(11, 18, 35, 0.68);
+  --border: rgba(255, 255, 255, 0.1);
   --border-focus: rgba(255, 255, 255, 0.28);
   --text: #f8fafc;
   --text-secondary: #94a3b8;
@@ -30,18 +28,31 @@ html, body {
   min-height: 100vh;
   font-family: var(--font-sans);
   color: var(--text);
-  background: var(--bg-top);
+  background: #02040a;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
-/* Smooth Atmospheric Sky Backdrop */
-#sky-backdrop {
+/* Krillion-style Vertical Scrolling Sky-to-Moon World */
+#sky-world {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 300vh;
   z-index: 0;
-  background: linear-gradient(180deg, #050814 0%, #0d1b3a 55%, #1d356b 100%);
-  transition: background 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  background: linear-gradient(
+    180deg,
+    #000000 0%,
+    #030614 22%,
+    #071029 45%,
+    #0f214f 68%,
+    #1c3d7a 86%,
+    #38bdf8 100%
+  );
+  transform: translateY(0vh);
+  transition: transform 1.25s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
 }
 
 #starfield-canvas {
@@ -49,38 +60,208 @@ html, body {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
-/* Subtle Ambient Moon at Top Center */
-.moon-ambient {
-  position: fixed;
-  top: -36px;
+/* Moon at Top of Vertical World */
+.moon-destination {
+  position: absolute;
+  top: 5vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.9);
-  width: 110px;
-  height: 110px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.moon-sphere {
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 38%, #ffffff 0%, #e2e8f0 55%, #94a3b8 100%);
-  box-shadow: 0 0 60px rgba(226, 232, 240, 0.28), 0 0 120px rgba(56, 189, 248, 0.12);
-  opacity: 0.35;
-  z-index: 1;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #e2e8f0 50%, #94a3b8 90%, #475569 100%);
+  box-shadow:
+    0 0 70px rgba(226, 232, 240, 0.55),
+    0 0 140px rgba(56, 189, 248, 0.25),
+    inset -14px -10px 24px rgba(15, 23, 42, 0.45);
+}
+
+.moon-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: rgba(226, 232, 240, 0.75);
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+/* Atmospheric Layer Horizon Lines in Sky */
+.sky-layer-tag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 0 28px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: rgba(226, 232, 240, 0.35);
+  text-align: right;
+}
+
+.earth-horizon {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0) 0%, rgba(15, 23, 42, 0.65) 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 14px;
+}
+
+.launchpad-ground {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Left-Edge Krillion-Style Altitude Ruler */
+.altitude-ruler {
+  position: fixed;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 68vh;
+  width: 56px;
+  z-index: 3;
   pointer-events: none;
-  transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1), opacity 1s ease;
+}
+
+.ruler-track {
+  position: relative;
+  width: 3px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+.ruler-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2%;
+  background: linear-gradient(180deg, var(--diamond), var(--platinum), var(--gold));
+  border-radius: 999px;
+  box-shadow: 0 0 12px var(--diamond);
+  transition: height 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ruler-tick {
+  position: absolute;
+  left: 10px;
+  transform: translateY(50%);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.42);
+  white-space: nowrap;
+}
+
+/* Background Starship Actor (Rises/Dips with Points) */
+.starship-actor {
+  position: fixed;
+  left: calc(50% + 335px);
+  bottom: 8vh;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  transition: bottom 1.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s ease;
+}
+
+.starship-svg-wrap {
+  filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.45));
+  animation: shipHover 2.6s ease-in-out infinite alternate;
+}
+
+@keyframes shipHover {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(4px); }
+}
+
+.starship-actor.boosting .starship-svg-wrap {
+  animation: shipBoost 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes shipBoost {
+  0% { transform: scale(1) translateY(0); }
+  35% { transform: scale(1.18) translateY(-18px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.starship-actor.stalling .starship-svg-wrap {
+  animation: shipStall 0.65s ease;
+}
+
+@keyframes shipStall {
+  0% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(14px) rotate(-8deg); }
+  65% { transform: translateY(10px) rotate(6deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+.starship-boost-pop {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid var(--diamond);
+  color: var(--diamond);
+  white-space: nowrap;
+  animation: popFloat 1.2s ease forwards;
+}
+
+@keyframes popFloat {
+  0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+  20% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; transform: translateY(-6px); }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+
+.starship-alt-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 /* Centered Single-Column Shell */
 .shell {
   position: relative;
   z-index: 5;
-  max-width: 560px;
+  max-width: 550px;
   margin: 0 auto;
-  padding: 28px 20px 64px;
-  min-height: 100vh;
+  padding: 24px 20px 36px;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 28px;
+  gap: 20px;
 }
 
 /* Minimal Header */
@@ -117,7 +298,7 @@ html, body {
 
 .seg-control {
   display: inline-flex;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px;
@@ -136,7 +317,7 @@ html, body {
 }
 
 .seg-btn.active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
@@ -144,7 +325,7 @@ html, body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   font-size: 0.82rem;
@@ -161,16 +342,16 @@ html, body {
   border-color: var(--border-focus);
 }
 
-/* Sleek Horizontal Sky-to-Moon Progress Widget */
+/* Sleek Status Card */
 .altitude-bar-card {
   background: var(--surface);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  padding: 13px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .altitude-top-row {
@@ -195,44 +376,14 @@ html, body {
 }
 
 .altitude-km {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #fff;
 }
 
 .altitude-pts {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--diamond);
-}
-
-/* Track from Earth to Moon */
-.flight-track {
-  position: relative;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  margin: 4px 0;
-}
-
-.flight-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #38bdf8, #c084fc, #fbbf24);
-  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.flight-shuttle {
-  position: absolute;
-  top: 50%;
-  left: 0%;
-  transform: translate(-50%, -50%);
-  font-size: 0.95rem;
-  transition: left 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
 }
 
 /* 10 Minimalist Round Dots */
@@ -245,12 +396,12 @@ html, body {
   flex: 1;
   height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   transition: all 0.3s ease;
 }
 
 .pip.current {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .pip.done-DIAMOND { background: var(--diamond); box-shadow: 0 0 8px var(--diamond); }
@@ -266,8 +417,8 @@ html, body {
   backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 36px 32px 32px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  padding: 34px 30px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
   position: relative;
   overflow: hidden;
 }
@@ -279,35 +430,35 @@ html, body {
   align-items: center;
   text-align: center;
   gap: 16px;
-  padding: 8px 0;
+  padding: 6px 0;
   animation: fadeIn 0.3s ease;
 }
 
 .start-emblem {
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
   background: rgba(56, 189, 248, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.9rem;
+  font-size: 1.8rem;
   box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
 }
 
 .start-title {
-  font-size: 1.75rem;
+  font-size: 1.7rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #fff;
 }
 
 .start-desc {
-  font-size: 0.88rem;
-  line-height: 1.6;
+  font-size: 0.87rem;
+  line-height: 1.55;
   color: var(--text-secondary);
-  max-width: 420px;
+  max-width: 410px;
 }
 
 .start-tier-strip {
@@ -316,27 +467,25 @@ html, body {
   flex-wrap: wrap;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  background: rgba(7, 11, 22, 0.5);
+  background: rgba(7, 11, 22, 0.55);
   border: 1px solid var(--border);
   padding: 8px 16px;
   border-radius: 999px;
-  margin: 4px 0;
 }
 
 .play-hero-btn {
-  margin-top: 6px;
+  margin-top: 4px;
   width: 100%;
   max-width: 260px;
   background: #ffffff;
   color: #050814;
   border: none;
   border-radius: 999px;
-  padding: 15px 32px;
-  font-size: 1rem;
+  padding: 14px 30px;
+  font-size: 0.98rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
   cursor: pointer;
   box-shadow: 0 0 28px rgba(255, 255, 255, 0.22);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -354,7 +503,7 @@ html, body {
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .timer-line-fill {
@@ -373,7 +522,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -392,18 +541,18 @@ html, body {
 
 /* Prompt Typography */
 .prompt-title {
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   font-weight: 700;
   line-height: 1.32;
   letter-spacing: -0.02em;
   color: #fff;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .prompt-sub {
-  font-size: 0.84rem;
+  font-size: 0.83rem;
   color: var(--text-secondary);
-  margin-bottom: 28px;
+  margin-bottom: 22px;
 }
 
 .prompt-sub strong {
@@ -415,7 +564,7 @@ html, body {
 .input-pill {
   display: flex;
   align-items: center;
-  background: rgba(7, 11, 22, 0.75);
+  background: rgba(7, 11, 22, 0.78);
   border: 1px solid var(--border-focus);
   border-radius: 16px;
   padding: 6px 6px 6px 18px;
@@ -443,7 +592,7 @@ html, body {
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 500;
   outline: none;
   min-width: 0;
@@ -469,7 +618,7 @@ html, body {
   color: #090d16;
   border: none;
   border-radius: 12px;
-  padding: 11px 18px;
+  padding: 10px 18px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
@@ -481,11 +630,45 @@ html, body {
   transform: translateY(-1px);
 }
 
+/* Typo Suggestion Banner ("Are you reffering to this word:") */
+.typo-suggestion {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: #e2e8f0;
+  animation: fadeIn 0.2s ease;
+}
+
+.typo-word-btn {
+  background: var(--diamond);
+  color: #040814;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.83rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.typo-word-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.55);
+}
+
 .stage-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 14px;
+  margin-top: 12px;
   min-height: 20px;
 }
 
@@ -515,7 +698,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 20px;
+  gap: 18px;
   animation: fadeIn 0.28s ease;
 }
 
@@ -539,7 +722,7 @@ html, body {
 }
 
 .reveal-kw-title {
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   text-transform: capitalize;
@@ -547,7 +730,7 @@ html, body {
 }
 
 .reveal-stat-line {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   line-height: 1.5;
 }
@@ -557,7 +740,7 @@ html, body {
   font-family: var(--font-mono);
 }
 
-/* Minimal 3-Column Comparison Strip (Common / Rare / Diamond) */
+/* Minimal 3-Column Comparison Strip */
 .spectrum-row {
   width: 100%;
   display: grid;
@@ -606,7 +789,7 @@ html, body {
   color: #090d16;
   border: none;
   border-radius: 14px;
-  padding: 14px 20px;
+  padding: 13px 20px;
   font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
@@ -622,14 +805,14 @@ html, body {
 .summary-box {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   text-align: center;
   animation: fadeIn 0.3s ease;
 }
 
 .summary-score-big {
   font-family: var(--font-mono);
-  font-size: 2.6rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: #fff;
   line-height: 1;
@@ -639,7 +822,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 280px;
+  max-height: 240px;
   overflow-y: auto;
   text-align: left;
   padding-right: 4px;
@@ -649,7 +832,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 9px 12px;
+  padding: 8px 12px;
   background: rgba(7, 11, 22, 0.45);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -668,7 +851,7 @@ html, body {
   color: #fff;
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 14px 20px;
+  padding: 13px 20px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -738,14 +921,28 @@ html, body {
   display: none !important;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 960px) {
+  .starship-actor {
+    left: auto;
+    right: 16px;
+  }
+  .altitude-ruler {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
   .stage-card {
-    padding: 28px 20px 24px;
+    padding: 26px 18px 22px;
   }
   .prompt-title {
-    font-size: 1.35rem;
+    font-size: 1.32rem;
   }
   .spectrum-row {
     grid-template-columns: 1fr;
+  }
+  .starship-actor {
+    transform: scale(0.78);
+    right: 6px;
   }
 }
