@@ -1,36 +1,47 @@
-// MOONSHOT — Living Space Shuttle & Search-Rarity Trivia Engine (v6)
+// MOONSHOT — Full-Screen Space Arcade Engine (v8)
 (function () {
   const TOTAL_ROUNDS = 10;
   const MAX_POINTS = 500;
   const MOON_DISTANCE_KM = 384400;
   const ROUND_SECONDS = 30;
 
+  const GEM_SVG_BY_TIER = {
+    DIAMOND: '<svg width="16" height="16" style="vertical-align:-3px"><use href="#gem-diamond"/></svg>',
+    PLATINUM: '<svg width="16" height="16" style="vertical-align:-3px"><use href="#gem-platinum"/></svg>',
+    GOLD: '<svg width="16" height="16" style="vertical-align:-3px"><use href="#gem-gold"/></svg>',
+    SILVER: '<svg width="16" height="16" style="vertical-align:-3px"><use href="#gem-silver"/></svg>',
+    BRONZE: '<svg width="16" height="16" style="vertical-align:-3px"><use href="#gem-bronze"/></svg>'
+  };
+
   let gameMode = "daily";
   let missionQuestions = [];
   let currentRoundIdx = 0;
   let totalPoints = 0;
+  let displayedKm = 0;
   let lastZoneIdx = 0;
   let rareStreak = 0;
   let roundHistory = [];
   let timerInterval = null;
   let secondsLeft = ROUND_SECONDS;
   let roundActive = false;
+  let isLaunched = false;
   let soundEnabled = true;
   let audioCtx = null;
   let pendingTypoEntry = null;
 
-  // Particle System State (for Shuttle Exhaust Clouds & Meteors)
+  // Particle System State
   let exhaustParticles = [];
   let burstIntensity = 0;
 
   // DOM Elements
+  const cameraRig = document.getElementById("camera-rig");
   const skyWorld = document.getElementById("sky-world");
+  const swingArm = document.getElementById("swing-arm");
   const rulerFill = document.getElementById("ruler-fill");
   const milestoneBanner = document.getElementById("milestone-banner");
   const starshipActor = document.getElementById("starship-actor");
   const starshipBoostPop = document.getElementById("starship-boost-pop");
   const starshipAltTag = document.getElementById("starship-alt-tag");
-  const thrusterOuter = document.getElementById("thruster-outer");
   const streakPill = document.getElementById("streak-pill");
 
   const altitudeCard = document.getElementById("altitude-card");
@@ -135,7 +146,6 @@
     return copy;
   }
 
-  // Damerau-Levenshtein Edit Distance (1 or 2 wrong/missing/extra/swapped letters)
   function editDistance(a, b) {
     const lenA = a.length;
     const lenB = b.length;
@@ -196,6 +206,7 @@
     return bestEntry;
   }
 
+  // Synthesized Arcade Audio
   function playSound(type) {
     if (!soundEnabled) return;
     try {
@@ -205,37 +216,63 @@
       if (audioCtx.state === "suspended") audioCtx.resume();
       const now = audioCtx.currentTime;
       const notesByType = {
-        DIAMOND: [523.25, 659.25, 783.99, 1046.5],
-        PLATINUM: [440, 554.37, 659.25],
+        LAUNCH: [196, 261.63, 329.63, 392, 523.25],
+        DIAMOND: [523.25, 659.25, 783.99, 1046.5, 1318.5],
+        PLATINUM: [440, 554.37, 659.25, 880],
         GOLD: [392, 493.88, 587.33],
         SILVER: [329.63, 440],
         BRONZE: [261.63, 329.63],
         HINT: [587.33, 880],
-        ERROR: [150]
+        ERROR: [145, 120]
       };
       const freqs = notesByType[type] || [300];
       freqs.forEach((f, idx) => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = type === "ERROR" ? "sawtooth" : "sine";
-        osc.frequency.setValueAtTime(f, now + idx * 0.07);
-        gain.gain.setValueAtTime(0.08, now + idx * 0.07);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.24);
+        osc.type = type === "ERROR" ? "sawtooth" : "triangle";
+        osc.frequency.setValueAtTime(f, now + idx * 0.065);
+        gain.gain.setValueAtTime(0.09, now + idx * 0.065);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.25);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start(now + idx * 0.07);
-        osc.stop(now + idx * 0.07 + 0.25);
+        osc.start(now + idx * 0.065);
+        osc.stop(now + idx * 0.065 + 0.27);
       });
     } catch (e) {}
   }
 
+  function triggerCameraShake(heavy = false) {
+    if (!cameraRig) return;
+    cameraRig.classList.remove("shake-heavy", "shake-light");
+    void cameraRig.offsetWidth;
+    cameraRig.classList.add(heavy ? "shake-heavy" : "shake-light");
+  }
+
+  function animateOdometer(targetKm) {
+    const startKm = displayedKm;
+    const diff = targetKm - startKm;
+    const startTime = performance.now();
+    const duration = 950;
+
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      displayedKm = Math.round(startKm + diff * eased);
+      const formatted = `${formatNumber(displayedKm)} KM`;
+      if (starshipAltTag) starshipAltTag.textContent = formatted;
+      if (altitudeKmEl) altitudeKmEl.textContent = `${formatNumber(displayedKm)} km`;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   function getZoneInfo(pts) {
-    if (pts >= 500) return { idx: 5, label: "🌕 The Moon", banner: "🌕 TOUCHDOWN ON THE MOON!" };
-    if (pts >= 400) return { idx: 4, label: "🌌 Deep Space", banner: "🌌 ENTERED DEEP SPACE!" };
-    if (pts >= 300) return { idx: 3, label: "🛰️ Orbital Space", banner: "🛰️ REACHED ORBITAL SPACE!" };
-    if (pts >= 200) return { idx: 2, label: "✨ Kármán Line", banner: "✨ CROSSED THE KÁRMÁN LINE!" };
-    if (pts >= 100) return { idx: 1, label: "🎈 Stratosphere", banner: "🎈 ENTERED THE STRATOSPHERE!" };
-    return { idx: 0, label: "🌍 Launchpad", banner: "" };
+    if (pts >= 500) return { idx: 5, label: "THE MOON", banner: "TOUCHDOWN AT TRANQUILITY BASE!" };
+    if (pts >= 400) return { idx: 4, label: "DEEP SPACE", banner: "ENTERED CIS-LUNAR DEEP SPACE!" };
+    if (pts >= 300) return { idx: 3, label: "LOW EARTH ORBIT", banner: "REACHED ORBITAL SPACE!" };
+    if (pts >= 200) return { idx: 2, label: "KÁRMÁN LINE", banner: "CROSSED THE KÁRMÁN LINE!" };
+    if (pts >= 100) return { idx: 1, label: "STRATOSPHERE", banner: "ENTERED THE STRATOSPHERE!" };
+    return { idx: 0, label: isLaunched ? "TROPOSPHERE" : "LAUNCHPAD", banner: "" };
   }
 
   function showMilestoneToast(text) {
@@ -244,67 +281,71 @@
     milestoneBanner.classList.remove("hidden");
     setTimeout(() => {
       milestoneBanner.classList.add("hidden");
-    }, 3200);
+    }, 3000);
   }
 
-  function spawnExhaustBurst(count, isHighTier) {
+  function spawnExhaustBurst(count, tierId) {
     if (!starshipActor) return;
     const rect = starshipActor.getBoundingClientRect();
     const nozzleX = rect.left + rect.width / 2;
-    const nozzleY = rect.bottom - 48;
+    const nozzleY = rect.bottom - 52;
 
-    const palette = isHighTier
-      ? ["#fff8dc", "#ffd166", "#38bdf8", "#f5a638", "#e65c19"]
-      : ["#fae3a4", "#f5a638", "#e65c19", "#c94f0f"];
+    const tierPalettes = {
+      DIAMOND: ["#ffffff", "#38bdf8", "#7dd3fc", "#ffd166", "#f5a638"],
+      PLATINUM: ["#ffffff", "#c084fc", "#e879f9", "#ffd166", "#f5a638"],
+      GOLD: ["#fff8dc", "#ffbe3d", "#f59e0b", "#e65c19"],
+      DEFAULT: ["#fae3a4", "#f5a638", "#e65c19", "#c94f0f"]
+    };
+    const palette = tierPalettes[tierId] || tierPalettes.DEFAULT;
 
     for (let i = 0; i < count; i++) {
-      const spreadX = (Math.random() - 0.5) * 68;
+      const spreadX = (Math.random() - 0.5) * 90;
       exhaustParticles.push({
         x: nozzleX + spreadX,
-        y: nozzleY + (Math.random() - 0.5) * 16,
-        vx: (spreadX / 35) + (Math.random() - 0.5) * 1.4,
-        vy: Math.random() * 3.8 + 1.8,
-        r: Math.random() * 20 + 12,
-        maxR: Math.random() * 44 + 28,
-        alpha: 0.88,
+        y: nozzleY + (Math.random() - 0.5) * 18,
+        vx: (spreadX / 28) + (Math.random() - 0.5) * 2.2,
+        vy: Math.random() * 4.5 + 2.0,
+        r: Math.random() * 22 + 14,
+        maxR: Math.random() * 52 + 32,
+        alpha: 0.92,
         color: palette[Math.floor(Math.random() * palette.length)]
       });
     }
   }
 
-  function updateAltitudeVisuals(lastPointsEarned = null) {
+  function updateAltitudeVisuals(lastPointsEarned = null, tierId = null) {
     const ratio = Math.min(1, Math.max(0, totalPoints / MAX_POINTS));
-    const currentKm = Math.round(ratio * MOON_DISTANCE_KM);
+    const targetKm = Math.round(ratio * MOON_DISTANCE_KM);
     const zone = getZoneInfo(totalPoints);
 
     zoneNameEl.textContent = zone.label;
-    altitudeKmEl.textContent = `${formatNumber(currentKm)} km`;
     scoreTotalEl.textContent = String(totalPoints);
+    animateOdometer(targetKm);
 
     if (zone.idx > lastZoneIdx && zone.banner) {
       showMilestoneToast(zone.banner);
     }
     lastZoneIdx = zone.idx;
 
-    // 1. Scroll the 400vh vertical sky world downward up to 300vh
-    const worldShiftVh = (ratio * 300).toFixed(2);
+    // 1. Scroll 450vh vertical sky world downward (up to 350vh at 500 pts, plus 18vh initial liftoff)
+    const liftoffOffset = isLaunched ? 18 : 0;
+    const worldShiftVh = (liftoffOffset + ratio * 332).toFixed(2);
     if (skyWorld) {
       skyWorld.style.transform = `translateY(${worldShiftVh}vh)`;
     }
 
-    // 2. Update Left Altitude Gauge
+    // 2. Update Left Altitude Rail
     if (rulerFill) {
       rulerFill.style.height = `${Math.max(2, Math.round(ratio * 100))}%`;
     }
 
-    // 3. Position Giant Space Shuttle vertically (7vh at pad up to 48vh at Moon)
+    // 3. Position Centerpiece Giant Space Shuttle
     if (starshipActor) {
-      let shipBottomVh = 7 + ratio * 41;
-      if (lastPointsEarned === 0 && totalPoints > 0) {
-        shipBottomVh = Math.max(7, shipBottomVh - 4);
+      let shipBottomVh = isLaunched ? 24 + ratio * 14 : 9;
+      if (lastPointsEarned === 0 && isLaunched) {
+        shipBottomVh = Math.max(18, shipBottomVh - 4);
       }
       starshipActor.style.bottom = `${shipBottomVh.toFixed(1)}vh`;
-      starshipAltTag.textContent = `${formatNumber(currentKm)} km`;
 
       starshipActor.classList.remove("boosting", "stalling");
       void starshipActor.offsetWidth;
@@ -312,24 +353,25 @@
       if (lastPointsEarned !== null) {
         if (lastPointsEarned > 0) {
           starshipActor.classList.add("boosting");
-          starshipBoostPop.textContent = `+${lastPointsEarned} PTS 🚀`;
+          starshipBoostPop.textContent = `+${lastPointsEarned} PTS · ${tierId} BURN!`;
           starshipBoostPop.classList.remove("hidden");
-          burstIntensity = Math.round(lastPointsEarned / 2);
-          spawnExhaustBurst(22 + Math.round(lastPointsEarned * 0.6), lastPointsEarned >= 40);
+          burstIntensity = Math.round(lastPointsEarned / 1.8);
+          spawnExhaustBurst(30 + Math.round(lastPointsEarned * 0.8), tierId);
+          triggerCameraShake(lastPointsEarned >= 30);
         } else {
           starshipActor.classList.add("stalling");
-          starshipBoostPop.textContent = `0 PTS · TURBULENCE`;
+          starshipBoostPop.textContent = `0 PTS · ENGINE STALL`;
           starshipBoostPop.classList.remove("hidden");
+          triggerCameraShake(false);
         }
       } else {
         starshipBoostPop.classList.add("hidden");
       }
     }
 
-    // Update Streak Badge
     if (streakPill) {
       if (rareStreak >= 2) {
-        streakPill.textContent = `🔥 ${rareStreak}x Streak`;
+        streakPill.textContent = `${rareStreak}X STREAK`;
         streakPill.classList.remove("hidden");
       } else {
         streakPill.classList.add("hidden");
@@ -359,31 +401,33 @@
   function showStartScreen(mode) {
     clearInterval(timerInterval);
     roundActive = false;
+    isLaunched = false;
     gameMode = mode || gameMode;
     btnModeDaily.classList.toggle("active", gameMode === "daily");
     btnModeFree.classList.toggle("active", gameMode === "free");
 
     currentRoundIdx = 0;
     totalPoints = 0;
+    displayedKm = 0;
     lastZoneIdx = 0;
     rareStreak = 0;
     roundHistory = [];
     hideTypoSuggestion();
 
+    if (swingArm) swingArm.classList.remove("retracted");
     if (altitudeCard) altitudeCard.classList.add("hidden");
-    timerTrackEl.classList.add("hidden");
     playView.classList.add("hidden");
     revealView.classList.add("hidden");
     summaryView.classList.add("hidden");
     startView.classList.remove("hidden");
 
-    btnStartGame.textContent = gameMode === "daily" ? "▶ Play Daily Launch" : "▶ Play Free Play";
     updateAltitudeVisuals(null);
     renderRoundPips(false);
   }
 
   function startMission(mode) {
     gameMode = mode || gameMode;
+    isLaunched = true;
     btnModeDaily.classList.toggle("active", gameMode === "daily");
     btnModeFree.classList.toggle("active", gameMode === "free");
 
@@ -392,9 +436,17 @@
 
     currentRoundIdx = 0;
     totalPoints = 0;
+    displayedKm = 0;
     lastZoneIdx = 0;
     rareStreak = 0;
     roundHistory = [];
+
+    // Retract Launch Gantry Umbilical Arm & Fire Liftoff Burst!
+    if (swingArm) swingArm.classList.add("retracted");
+    playSound("LAUNCH");
+    triggerCameraShake(true);
+    burstIntensity = 25;
+    spawnExhaustBurst(48, "GOLD");
 
     startView.classList.add("hidden");
     summaryView.classList.add("hidden");
@@ -402,7 +454,6 @@
     if (altitudeCard) altitudeCard.classList.remove("hidden");
     playView.classList.remove("hidden");
 
-    spawnExhaustBurst(28, false);
     updateAltitudeVisuals(null);
     loadCurrentRound();
   }
@@ -412,7 +463,7 @@
     roundActive = true;
 
     roundNumEl.textContent = String(currentRoundIdx + 1);
-    qCategoryEl.textContent = q.category;
+    qCategoryEl.textContent = q.category.toUpperCase();
     qAvgSearchesEl.textContent = formatNumber(q.avgSearches);
     qPromptEl.textContent = q.prompt;
 
@@ -427,7 +478,6 @@
     revealView.classList.add("hidden");
     summaryView.classList.add("hidden");
     playView.classList.remove("hidden");
-    timerTrackEl.classList.remove("hidden");
 
     renderRoundPips(true);
     startTimer();
@@ -460,13 +510,12 @@
 
   function updateWordCountChip() {
     const count = getWords(keywordInput.value).length;
-    wordCountChip.textContent = `${count}/2`;
+    wordCountChip.textContent = `${count}/2 WORDS`;
     wordCountChip.classList.remove("valid", "invalid");
     if (count === 1 || count === 2) wordCountChip.classList.add("valid");
     else if (count > 2) wordCountChip.classList.add("invalid");
   }
 
-  // Hint button reveals starting letter & length of a Platinum/Gold keyword
   if (btnHint) {
     btnHint.addEventListener("click", () => {
       if (!roundActive) return;
@@ -475,7 +524,7 @@
       const pick = candidates[Math.floor(Math.random() * candidates.length)] || q.answers[0];
       const words = pick.k.split(" ");
       const firstLetter = pick.k.charAt(0).toUpperCase();
-      hintBanner.innerHTML = `💡 <strong>${pick.t} Hint:</strong> Starts with <strong>"${firstLetter}..."</strong> (${words.length} ${words.length === 1 ? "word" : "words"}, ${pick.k.length} letters)`;
+      hintBanner.innerHTML = `<strong>${pick.t} INTEL:</strong> Starts with <strong>"${firstLetter}..."</strong> (${words.length} ${words.length === 1 ? "word" : "words"}, ${pick.k.length} letters)`;
       hintBanner.classList.remove("hidden");
       btnHint.disabled = true;
       playSound("HINT");
@@ -486,8 +535,7 @@
   keywordInput.addEventListener("input", () => {
     updateWordCountChip();
     hideTypoSuggestion();
-    // Little thruster puff every time the player types!
-    spawnExhaustBurst(2, false);
+    spawnExhaustBurst(3, "DEFAULT");
     if (feedbackMsgEl.textContent) feedbackMsgEl.textContent = "";
   });
 
@@ -508,11 +556,11 @@
     const words = getWords(raw);
 
     if (words.length === 0) {
-      triggerError("Enter 1 or 2 words");
+      triggerError("ENTER 1 OR 2 WORDS");
       return;
     }
     if (words.length > 2) {
-      triggerError("Max 2 words allowed");
+      triggerError("MAX 2 WORDS ALLOWED");
       playSound("ERROR");
       return;
     }
@@ -537,7 +585,7 @@
     }
 
     hideTypoSuggestion();
-    triggerError(`"${raw}" not recognized — try another`);
+    triggerError(`"${raw.toUpperCase()}" NOT IN TELEMETRY — TRY ANOTHER`);
     playSound("ERROR");
   });
 
@@ -571,15 +619,16 @@
 
       playSound(tierId);
 
+      const gemSvg = GEM_SVG_BY_TIER[tierId] || "";
       revealTierBadge.style.color = cfg.color;
       revealTierBadge.style.borderColor = cfg.color;
-      revealTierBadge.textContent = `${cfg.icon} ${cfg.name} · +${earnedPts} PTS`;
+      revealTierBadge.innerHTML = `${gemSvg} <span>${cfg.name} · +${earnedPts} PTS</span>`;
       revealUserKw.textContent = matchedEntry.k;
 
       const pctOfAvg = (matchedEntry.v / currentQ.avgSearches) * 100;
       const diffText =
         matchedEntry.v < currentQ.avgSearches
-          ? `${(100 - pctOfAvg).toFixed(1)}% rarer than the <strong>${formatNumber(currentQ.avgSearches)}</strong> avg`
+          ? `${(100 - pctOfAvg).toFixed(1)}% rarer than the <strong>${formatNumber(currentQ.avgSearches)}</strong> monthly avg`
           : `Above the <strong>${formatNumber(currentQ.avgSearches)}</strong> monthly avg`;
 
       revealStatLine.innerHTML = `<strong>${formatNumber(matchedEntry.v)}</strong> Google searches/mo · ${diffText}`;
@@ -588,8 +637,8 @@
       playSound("ERROR");
       revealTierBadge.style.color = "var(--danger)";
       revealTierBadge.style.borderColor = "rgba(244, 63, 94, 0.4)";
-      revealTierBadge.textContent = timedOut ? "⏱️ TIME UP · +0 PTS" : "⏭️ SKIPPED · +0 PTS";
-      revealUserKw.textContent = "No Keyword";
+      revealTierBadge.textContent = timedOut ? "TIME EXPIRED · +0 PTS" : "STAGE JETTISONED · +0 PTS";
+      revealUserKw.textContent = "NO KEYWORD";
       revealStatLine.innerHTML = `Question avg: <strong>${formatNumber(currentQ.avgSearches)}</strong> searches/mo`;
     }
 
@@ -602,14 +651,14 @@
       points: earnedPts
     });
 
-    updateAltitudeVisuals(earnedPts);
+    updateAltitudeVisuals(earnedPts, tierId);
     renderRoundPips(true);
     renderCompactSpectrum(currentQ);
 
     nextRoundBtn.textContent =
       currentRoundIdx + 1 < TOTAL_ROUNDS
-        ? `Continue to Round ${currentRoundIdx + 2} →`
-        : "See Final Score →";
+        ? `NEXT STAGE (STAGE ${currentRoundIdx + 2}/10) [ENTER] →`
+        : "VIEW MISSION LOG [ENTER] →";
 
     playView.classList.add("hidden");
     revealView.classList.remove("hidden");
@@ -618,9 +667,9 @@
 
   function renderCompactSpectrum(question) {
     const picks = [
-      { key: "BRONZE", label: "🥉 Common (10p)", color: "var(--bronze)" },
-      { key: "GOLD", label: "🥇 Rare (30p)", color: "var(--gold)" },
-      { key: "DIAMOND", label: "💎 Diamond (50p)", color: "var(--diamond)" }
+      { key: "BRONZE", label: "Common (10p)", color: "var(--bronze)" },
+      { key: "GOLD", label: "Rare (30p)", color: "var(--gold)" },
+      { key: "DIAMOND", label: "Diamond (50p)", color: "var(--diamond)" }
     ];
 
     sampleTiersGrid.innerHTML = picks
@@ -628,7 +677,7 @@
         const sample = question.answers.find((a) => a.t === p.key) || question.answers[0];
         return `
           <div class="spectrum-cell">
-            <div class="spectrum-label" style="color:${p.color}">${p.label}</div>
+            <div class="spectrum-label" style="color:${p.color}">${GEM_SVG_BY_TIER[p.key]} <span>${p.label}</span></div>
             <div class="spectrum-word">${sample.k}</div>
             <div class="spectrum-vol">${formatNumber(sample.v)}/mo</div>
           </div>
@@ -644,34 +693,33 @@
   });
 
   function getRankTitle(pts) {
-    if (pts >= 480) return "🌕 APOLLO MOONWALKER";
-    if (pts >= 400) return "🛰️ LUNAR ORBIT COMMANDER";
-    if (pts >= 300) return "🌌 DEEP SPACE NAVIGATOR";
-    if (pts >= 200) return "✨ KÁRMÁN LINE PIONEER";
-    if (pts >= 100) return "🎈 STRATOSPHERE CAPTAIN";
-    return "🌍 TROPOSPHERE CADET";
+    if (pts >= 480) return "APOLLO MOONWALKER";
+    if (pts >= 400) return "LUNAR ORBIT COMMANDER";
+    if (pts >= 300) return "DEEP SPACE NAVIGATOR";
+    if (pts >= 200) return "KÁRMÁN LINE PIONEER";
+    if (pts >= 100) return "STRATOSPHERE CAPTAIN";
+    return "LAUNCHPAD CADET";
   }
 
   function showMissionSummary() {
-    timerTrackEl.classList.add("hidden");
     revealView.classList.add("hidden");
     playView.classList.add("hidden");
     summaryView.classList.remove("hidden");
 
     const km = Math.round((totalPoints / MAX_POINTS) * MOON_DISTANCE_KM);
     summaryRankTitle.textContent = getRankTitle(totalPoints);
-    summaryScoreBig.innerHTML = `${totalPoints} <span style="font-size:1.1rem;color:var(--text-secondary);font-weight:500;">/ 500</span>`;
-    summaryAltitudeSub.textContent = `Reached ${formatNumber(km)} km altitude`;
+    summaryScoreBig.innerHTML = `${totalPoints} <small>/ 500 PTS</small>`;
+    summaryAltitudeSub.textContent = `Final Altitude: ${formatNumber(km)} km`;
 
     summaryTableBody.innerHTML = roundHistory
       .map((item) => {
         const cfg = window.TIER_CONFIG[item.tierId];
         const color = cfg ? cfg.color : "var(--text-muted)";
-        const icon = cfg ? cfg.icon : "—";
+        const gem = GEM_SVG_BY_TIER[item.tierId] || "";
         return `
           <div class="summary-row">
             <span style="color:var(--text-secondary);">${item.round}. <strong style="color:#fff;text-transform:capitalize;">${item.keyword}</strong></span>
-            <span style="font-family:var(--font-mono);color:${color};font-weight:700;">${icon} +${item.points}</span>
+            <span style="font-family:var(--font-mono);color:${color};font-weight:700;">${gem} +${item.points}</span>
           </div>
         `;
       })
@@ -680,11 +728,11 @@
 
   btnShareScore.addEventListener("click", () => {
     const km = Math.round((totalPoints / MAX_POINTS) * MOON_DISTANCE_KM);
-    const emojis = roundHistory.map((r) => (window.TIER_CONFIG[r.tierId] ? window.TIER_CONFIG[r.tierId].icon : "⬛")).join("");
-    const text = `🚀 MOONSHOT ${totalPoints}/500 (${formatNumber(km)} km)\n${emojis}`;
+    const tiers = roundHistory.map((r) => (r.tierId !== "MISS" ? `[${r.tierId[0]}]` : "[X]")).join("");
+    const text = `MOONSHOT ${totalPoints}/500 PTS (${formatNumber(km)} km)\n${tiers}`;
     navigator.clipboard.writeText(text).then(() => {
-      btnShareScore.textContent = "Copied!";
-      setTimeout(() => (btnShareScore.textContent = "Copy Score"), 2000);
+      btnShareScore.textContent = "COPIED TO CLIPBOARD!";
+      setTimeout(() => (btnShareScore.textContent = "COPY FLIGHT LOG"), 2000);
     });
   });
 
@@ -701,10 +749,10 @@
 
   btnSoundToggle.addEventListener("click", () => {
     soundEnabled = !soundEnabled;
-    btnSoundToggle.textContent = soundEnabled ? "🔊" : "🔇";
+    btnSoundToggle.textContent = soundEnabled ? "SFX" : "MUTE";
   });
 
-  // === Living Cosmos & Billowing Shuttle Exhaust Canvas ===
+  // === Real-Time Particle & Starfield Canvas ===
   function initCosmosCanvas() {
     const canvas = document.getElementById("cosmos-canvas");
     const ctx = canvas.getContext("2d");
@@ -716,29 +764,27 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
 
-      // Round background stars
-      stars = Array.from({ length: 85 }, () => ({
+      stars = Array.from({ length: 95 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         r: Math.random() * 1.4 + 0.4,
         alpha: Math.random() * 0.7 + 0.2,
-        speed: Math.random() * 0.3 + 0.06
+        speed: Math.random() * 0.35 + 0.08
       }));
 
-      // 4-point twinkling star sparkles matching reference image
-      sparkles = Array.from({ length: 18 }, () => ({
+      sparkles = Array.from({ length: 22 }, () => ({
         x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height * 0.85,
-        size: Math.random() * 5 + 4,
+        y: Math.random() * canvas.height * 0.82,
+        size: Math.random() * 5.5 + 4,
         phase: Math.random() * Math.PI * 2,
-        speed: Math.random() * 0.03 + 0.015
+        speed: Math.random() * 0.035 + 0.015
       }));
     }
 
     function drawFourPointStar(x, y, size, alpha) {
       ctx.save();
       ctx.translate(x, y);
-      ctx.fillStyle = `rgba(251, 246, 232, ${alpha})`;
+      ctx.fillStyle = `rgba(252, 247, 232, ${alpha})`;
       ctx.beginPath();
       ctx.moveTo(0, -size);
       ctx.quadraticCurveTo(size * 0.18, -size * 0.18, size, 0);
@@ -752,10 +798,9 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const speedMult = 1 + (totalPoints / MAX_POINTS) * 4 + (burstIntensity > 0 ? 3 : 0);
-      if (burstIntensity > 0) burstIntensity -= 0.25;
+      const speedMult = (isLaunched ? 1.8 : 0.4) + (totalPoints / MAX_POINTS) * 4.5 + (burstIntensity > 0 ? 4 : 0);
+      if (burstIntensity > 0) burstIntensity -= 0.3;
 
-      // 1. Draw drifting stars
       for (const s of stars) {
         s.y += s.speed * speedMult;
         if (s.y > canvas.height) {
@@ -768,7 +813,6 @@
         ctx.fill();
       }
 
-      // 2. Draw 4-point twinkling stars
       for (const sp of sparkles) {
         sp.phase += sp.speed;
         const twinkle = 0.35 + Math.sin(sp.phase) * 0.55;
@@ -777,13 +821,12 @@
         }
       }
 
-      // 3. Occasional shooting star
-      if (!meteor && Math.random() < 0.004) {
+      if (!meteor && Math.random() < 0.005) {
         meteor = {
           x: Math.random() * canvas.width * 0.8 + canvas.width * 0.1,
           y: Math.random() * canvas.height * 0.35,
-          vx: -6.5,
-          vy: 3.5,
+          vx: -7,
+          vy: 3.8,
           life: 1
         };
       }
@@ -793,7 +836,7 @@
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(meteor.x, meteor.y);
-        ctx.lineTo(meteor.x - meteor.vx * 6, meteor.y - meteor.vy * 6);
+        ctx.lineTo(meteor.x - meteor.vx * 7, meteor.y - meteor.vy * 7);
         ctx.stroke();
         ctx.restore();
         meteor.x += meteor.vx;
@@ -802,33 +845,34 @@
         if (meteor.life <= 0) meteor = null;
       }
 
-      // 4. Continuous idle exhaust clouds under the Space Shuttle's 3 nozzles
-      if (starshipActor && Math.random() < 0.55) {
+      // Continuous exhaust billowing under the 3 nozzles (or gentle cryo steam on launchpad)
+      if (starshipActor && Math.random() < 0.72) {
         const rect = starshipActor.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
-        const cy = rect.bottom - 38;
-        const nozzleOffsets = [-46, 0, 46];
+        const cy = rect.bottom - 44;
+        const nozzleOffsets = [-52, 0, 52];
         const pickOffset = nozzleOffsets[Math.floor(Math.random() * nozzleOffsets.length)];
-        const colors = ["#fae3a4", "#f5a638", "#e65c19"];
+        const colors = isLaunched
+          ? ["#fae3a4", "#f5a638", "#e65c19"]
+          : ["rgba(226, 232, 240, 0.45)", "#fae3a4", "#f5a638"];
         exhaustParticles.push({
-          x: cx + pickOffset + (Math.random() - 0.5) * 12,
+          x: cx + pickOffset + (Math.random() - 0.5) * 14,
           y: cy + Math.random() * 8,
-          vx: (pickOffset / 45) * 0.5 + (Math.random() - 0.5) * 0.6,
-          vy: Math.random() * 1.8 + 1.2,
-          r: Math.random() * 10 + 8,
-          maxR: Math.random() * 24 + 18,
-          alpha: 0.72,
+          vx: (pickOffset / 40) * 0.65 + (Math.random() - 0.5) * 0.8,
+          vy: isLaunched ? Math.random() * 2.6 + 1.5 : Math.random() * 1.1 + 0.4,
+          r: Math.random() * 12 + 10,
+          maxR: Math.random() * 30 + 22,
+          alpha: isLaunched ? 0.78 : 0.45,
           color: colors[Math.floor(Math.random() * colors.length)]
         });
       }
 
-      // 5. Render & update billowing exhaust cloud particles
       for (let i = exhaustParticles.length - 1; i >= 0; i--) {
         const p = exhaustParticles[i];
         p.x += p.vx;
         p.y += p.vy;
-        if (p.r < p.maxR) p.r += 0.45;
-        p.alpha -= 0.016;
+        if (p.r < p.maxR) p.r += 0.5;
+        p.alpha -= 0.015;
 
         if (p.alpha <= 0) {
           exhaustParticles.splice(i, 1);

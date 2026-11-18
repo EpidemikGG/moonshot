@@ -3,377 +3,412 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MOONSHOT — Ascend to the Moon</title>
+  <title>MOONSHOT — Search-Rarity Space Arcade</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=8" />
 </head>
 <body>
-  <!-- Full-Screen Living Sky & Space Canvas (4-point twinkling stars, meteors, exhaust clouds) -->
-  <canvas id="cosmos-canvas"></canvas>
+  <!-- Reusable Custom SVG Game Sprites (Gems, Icons — NO generic OS emojis) -->
+  <svg width="0" height="0" style="position:absolute;pointer-events:none;" aria-hidden="true">
+    <defs>
+      <!-- Diamond Gem -->
+      <symbol id="gem-diamond" viewBox="0 0 32 32">
+        <polygon points="16,2 29,11 16,30 3,11" fill="#38bdf8" stroke="#e0f2fe" stroke-width="1.5"/>
+        <polygon points="16,2 23,11 16,30 9,11" fill="#7dd3fc" opacity="0.65"/>
+        <polygon points="3,11 29,11 16,15" fill="#bae6fd" opacity="0.7"/>
+      </symbol>
+      <!-- Platinum Gem -->
+      <symbol id="gem-platinum" viewBox="0 0 32 32">
+        <polygon points="16,2 28,9 28,23 16,30 4,23 4,9" fill="#a855f7" stroke="#f3e8ff" stroke-width="1.5"/>
+        <polygon points="16,5 24,11 16,27 8,11" fill="#d8b4fe" opacity="0.6"/>
+      </symbol>
+      <!-- Gold Gem -->
+      <symbol id="gem-gold" viewBox="0 0 32 32">
+        <polygon points="10,4 22,4 30,12 16,29 2,12" fill="#f59e0b" stroke="#fef3c7" stroke-width="1.5"/>
+        <polygon points="10,4 22,4 24,12 16,29 8,12" fill="#fcd34d" opacity="0.65"/>
+      </symbol>
+      <!-- Silver Gem -->
+      <symbol id="gem-silver" viewBox="0 0 32 32">
+        <polygon points="16,3 28,16 16,29 4,16" fill="#94a3b8" stroke="#f1f5f9" stroke-width="1.5"/>
+        <polygon points="16,3 22,16 16,29 10,16" fill="#cbd5e1" opacity="0.65"/>
+      </symbol>
+      <!-- Bronze Gem -->
+      <symbol id="gem-bronze" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="12" fill="#ea580c" stroke="#ffedd5" stroke-width="1.5"/>
+        <polygon points="16,7 23,16 16,25 9,16" fill="#fb923c" opacity="0.75"/>
+      </symbol>
+    </defs>
+  </svg>
 
-  <!-- Vertical Scrolling Sky-to-Moon World (400vh tall) -->
-  <div id="sky-world">
-    <!-- Top Destination: The Moon (384,400 km / 500 pts) -->
-    <div class="world-zone zone-moon" style="bottom: 345vh;">
-      <div class="giant-moon">
-        <div class="crater c1"></div>
-        <div class="crater c2"></div>
-        <div class="crater c3"></div>
-        <div class="crater c4"></div>
-      </div>
-      <div class="zone-horizon-line"><span>🌕 384,400 KM · THE MOON (500 PTS)</span></div>
-    </div>
-
-    <!-- Zone 5: Deep Space & Asteroid Belt (350-450 pts) -->
-    <div class="world-zone zone-deepspace" style="bottom: 270vh;">
-      <div class="drifter asteroid-1">☄️</div>
-      <div class="drifter asteroid-2">🪨</div>
-      <div class="drifter ufo-easter">🛸</div>
-      <div class="zone-horizon-line"><span>🌌 300,000 KM · DEEP SPACE (400 PTS)</span></div>
-    </div>
-
-    <!-- Zone 4: Low Earth Orbit — Satellites & ISS (250-350 pts) -->
-    <div class="world-zone zone-orbit" style="bottom: 195vh;">
-      <div class="drifter iss-station">🛰️</div>
-      <div class="drifter sputnik-sat">📡</div>
-      <div class="zone-horizon-line"><span>🛰️ 200,000 KM · ORBITAL SPACE (300 PTS)</span></div>
-    </div>
-
-    <!-- Zone 3: Kármán Line & Aurora Borealis (150-250 pts) -->
-    <div class="world-zone zone-karman" style="bottom: 125vh;">
-      <div class="aurora-ribbon"></div>
-      <div class="aurora-ribbon aurora-2"></div>
-      <div class="zone-horizon-line"><span>✨ 100,000 KM · KÁRMÁN LINE (200 PTS)</span></div>
-    </div>
-
-    <!-- Zone 2: Stratosphere — Weather Balloons & High Clouds (50-150 pts) -->
-    <div class="world-zone zone-stratosphere" style="bottom: 58vh;">
-      <div class="drifter balloon-1">🎈</div>
-      <div class="drifter jet-plane">✈️</div>
-      <div class="cloud-wisps wisp-1"></div>
-      <div class="cloud-wisps wisp-2"></div>
-      <div class="zone-horizon-line"><span>🎈 50,000 KM · STRATOSPHERE (100 PTS)</span></div>
-    </div>
-
-    <!-- Zone 1: Earth Launchpad & Billowing Launch Clouds (0 pts) -->
-    <div class="world-zone zone-launchpad" style="bottom: 0;">
-      <!-- Multi-layered warm vintage launch clouds matching the reference artwork -->
-      <svg class="launch-clouds-svg" viewBox="0 0 1440 340" preserveAspectRatio="none">
-        <!-- Back cream-yellow cloud layer -->
-        <path fill="#fae3a4" opacity="0.92" d="M0,340 L0,160 C60,150 90,190 140,185 C180,140 240,145 270,195 C320,170 390,190 420,235 C470,210 530,225 560,265 L880,265 C920,220 980,210 1030,240 C1070,185 1140,170 1190,205 C1230,145 1300,145 1340,190 C1380,160 1420,165 1440,180 L1440,340 Z"/>
-        <!-- Mid golden-amber cloud layer -->
-        <path fill="#f5a638" d="M0,340 L0,210 C70,195 130,220 165,250 C210,205 285,205 330,255 C380,230 445,245 480,285 C540,255 615,270 650,305 L790,305 C835,265 910,255 965,288 C1005,240 1075,230 1125,265 C1175,210 1255,210 1295,255 C1345,220 1400,220 1440,235 L1440,340 Z"/>
-        <!-- Front deep burnt-orange cloud layer -->
-        <path fill="#c94f0f" d="M0,340 L0,265 C65,250 125,265 165,295 C220,255 300,260 345,302 C405,275 480,285 525,318 C595,292 675,302 720,328 C775,300 855,292 915,318 C965,282 1045,275 1100,305 C1155,260 1235,260 1285,298 C1335,268 1395,265 1440,280 L1440,340 Z"/>
-      </svg>
-    </div>
-  </div>
-
-  <!-- Main Split Viewport: Left Flight Showcase (Giant Shuttle) + Right Minimalist Trivia Stage -->
-  <div class="viewport-grid">
-    <!-- Left Column: Giant Space Shuttle Stack & Altitude Gauge -->
-    <section class="flight-showcase" aria-label="Space Shuttle Ascent">
-      <!-- Vertical Altitude Meter -->
-      <div class="altitude-gauge">
-        <div class="gauge-top-icon">🌕</div>
-        <div class="gauge-track">
-          <div class="gauge-fill" id="ruler-fill"></div>
-          <div class="gauge-tick" style="bottom: 100%;"><span>500p</span></div>
-          <div class="gauge-tick" style="bottom: 80%;"><span>400p</span></div>
-          <div class="gauge-tick" style="bottom: 60%;"><span>300p</span></div>
-          <div class="gauge-tick" style="bottom: 40%;"><span>200p</span></div>
-          <div class="gauge-tick" style="bottom: 20%;"><span>100p</span></div>
-          <div class="gauge-tick" style="bottom: 0%;"><span>0p</span></div>
+  <!-- Full-Screen Game Camera Viewport -->
+  <div class="camera-rig" id="camera-rig">
+    <!-- 1. Deep Parallax Sky & Space World (450vh tall, scrolls as Shuttle climbs) -->
+    <div id="sky-world">
+      <!-- Top Zone: The Moon (384,400 km / 500 pts) -->
+      <div class="env-layer layer-moon" style="bottom: 355vh;">
+        <div class="moon-orb">
+          <svg viewBox="0 0 260 260" width="240" height="240">
+            <defs>
+              <radialGradient id="moonGrad" cx="35%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#fffdf7"/>
+                <stop offset="50%" stop-color="#f3e5c0"/>
+                <stop offset="85%" stop-color="#c4b083"/>
+                <stop offset="100%" stop-color="#7c6b46"/>
+              </radialGradient>
+            </defs>
+            <circle cx="130" cy="130" r="120" fill="url(#moonGrad)"/>
+            <circle cx="95" cy="85" r="24" fill="#b39e72" opacity="0.45"/>
+            <circle cx="165" cy="115" r="34" fill="#9e895e" opacity="0.38"/>
+            <circle cx="80" cy="165" r="18" fill="#9e895e" opacity="0.42"/>
+            <circle cx="145" cy="185" r="15" fill="#b39e72" opacity="0.5"/>
+            <circle cx="122" cy="52" r="11" fill="#9e895e" opacity="0.35"/>
+          </svg>
+          <div class="moon-target-ring"></div>
         </div>
-        <div class="gauge-bot-icon">🌍</div>
+        <div class="altitude-marker-line"><span>384,400 KM · TRANQUILITY BASE (THE MOON)</span></div>
       </div>
 
-      <!-- Milestone Toast Banner -->
-      <div class="milestone-banner hidden" id="milestone-banner">✨ CROSSED THE KÁRMÁN LINE!</div>
-
-      <!-- Giant Space Shuttle Stack (Modeled after user reference illustration) -->
-      <div class="shuttle-stage">
-        <div class="starship-actor" id="starship-actor">
-          <div class="starship-boost-pop hidden" id="starship-boost-pop">+50 PTS 🚀</div>
-
-          <div class="starship-svg-wrap" id="starship-svg-wrap">
-            <svg class="shuttle-svg" viewBox="0 0 240 360" width="185" height="278" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <!-- Center Main Engine Thrust Gradient -->
-                <linearGradient id="mainPlume" x1="120" y1="232" x2="120" y2="355" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#ff9914"/>
-                  <stop offset="45%" stop-color="#ffbe3d"/>
-                  <stop offset="85%" stop-color="#fae3a4"/>
-                  <stop offset="100%" stop-color="#fae3a4" stop-opacity="0"/>
-                </linearGradient>
-                <!-- Inner Core Plume -->
-                <linearGradient id="corePlume" x1="120" y1="235" x2="120" y2="335" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#fff8dc"/>
-                  <stop offset="65%" stop-color="#ffd166"/>
-                  <stop offset="100%" stop-color="#ff9914" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-
-              <!-- === TRIPLE EXHAUST PLUMES (Animated) === -->
-              <g id="thruster-outer">
-                <!-- Left SRB Plume -->
-                <path d="M62 236 L52 305 L82 305 L74 236 Z" fill="url(#mainPlume)"/>
-                <path d="M65 236 L59 285 L77 285 L71 236 Z" fill="url(#corePlume)"/>
-                <!-- Right SRB Plume -->
-                <path d="M166 236 L158 305 L188 305 L178 236 Z" fill="url(#mainPlume)"/>
-                <path d="M169 236 L163 285 L181 285 L175 236 Z" fill="url(#corePlume)"/>
-                <!-- Center Main Orbiter Geometric Thrust Beam -->
-                <polygon points="98,230 82,350 158,350 142,230" fill="url(#mainPlume)"/>
-                <polygon points="106,230 96,335 144,335 134,230" fill="url(#corePlume)"/>
-                <polygon points="113,230 120,320 127,230" fill="#ff7b00" opacity="0.7"/>
-              </g>
-
-              <!-- === CENTER BURNT-ORANGE EXTERNAL FUEL TANK === -->
-              <!-- Left Lit Side -->
-              <path d="M120 14 C96 28, 86 58, 86 88 L86 205 L120 205 Z" fill="#e65c19"/>
-              <!-- Right Shadowed Side -->
-              <path d="M120 14 C144 28, 154 58, 154 88 L154 205 L120 205 Z" fill="#b8420b"/>
-              <!-- Intertank Rib Line -->
-              <rect x="86" y="72" width="68" height="4" fill="#ff7f38" opacity="0.85"/>
-              <rect x="86" y="76" width="68" height="2" fill="#8c2f05" opacity="0.7"/>
-
-              <!-- === LEFT SOLID ROCKET BOOSTER (SRB) === -->
-              <!-- Cone & Body Lit Left -->
-              <path d="M68 54 L54 80 L54 214 L68 214 Z" fill="#f7f0da"/>
-              <!-- Cone & Body Shadow Right -->
-              <path d="M68 54 L82 80 L82 214 L68 214 Z" fill="#d5c8a8"/>
-              <!-- SRB Rings -->
-              <rect x="54" y="80" width="28" height="3.5" fill="#091f36"/>
-              <rect x="54" y="96" width="28" height="3.5" fill="#091f36"/>
-              <rect x="54" y="210" width="28" height="4" fill="#091f36"/>
-              <!-- Left SRB Flared Nozzle -->
-              <path d="M56 214 L51 228 L85 228 L80 214 Z" fill="#f7f0da"/>
-              <rect x="53" y="223" width="30" height="2.5" fill="#091f36"/>
-              <path d="M55 228 L52 237 L84 237 L81 228 Z" fill="#d5c8a8"/>
-
-              <!-- === RIGHT SOLID ROCKET BOOSTER (SRB) === -->
-              <!-- Cone & Body Lit Left -->
-              <path d="M172 54 L158 80 L158 214 L172 214 Z" fill="#f7f0da"/>
-              <!-- Cone & Body Shadow Right -->
-              <path d="M172 54 L186 80 L186 214 L172 214 Z" fill="#cfc19e"/>
-              <!-- SRB Rings -->
-              <rect x="158" y="80" width="28" height="3.5" fill="#091f36"/>
-              <rect x="158" y="96" width="28" height="3.5" fill="#091f36"/>
-              <rect x="158" y="210" width="28" height="4" fill="#091f36"/>
-              <!-- Right SRB Flared Nozzle -->
-              <path d="M160 214 L155 228 L189 228 L184 214 Z" fill="#f7f0da"/>
-              <rect x="157" y="223" width="30" height="2.5" fill="#091f36"/>
-              <path d="M159 228 L156 237 L188 237 L185 228 Z" fill="#cfc19e"/>
-
-              <!-- === SPACE SHUTTLE ORBITER (FOREGROUND) === -->
-              <!-- Dark Navy Thermal Leading Edge / Wing Outline -->
-              <path d="M120 74 C104 78, 98 98, 96 135 L86 168 L36 204 L34 219 L94 224 L146 224 L206 219 L204 204 L154 168 L144 135 C142 98, 136 78, 120 74 Z" fill="#091f36"/>
-
-              <!-- Left Delta Wing (Cream Lit) -->
-              <path d="M98 132 L89 170 L40 205 L40 215 L98 218 Z" fill="#fbf5e3"/>
-              <!-- Right Delta Wing (Warm Cream Shadow) -->
-              <path d="M142 132 L151 170 L200 205 L200 215 L142 218 Z" fill="#e2d6b5"/>
-              <!-- Wing Striping -->
-              <rect x="40" y="208" width="56" height="4" fill="#091f36"/>
-              <rect x="144" y="208" width="56" height="4" fill="#091f36"/>
-
-              <!-- Orbiter Center Fuselage Left (Cream Lit) -->
-              <path d="M120 78 C108 82, 100 100, 100 128 L100 220 L120 220 Z" fill="#fcf7e8"/>
-              <!-- Orbiter Center Fuselage Right (Shadowed Cream) -->
-              <path d="M120 78 C132 82, 140 100, 140 128 L140 220 L120 220 Z" fill="#d9cca9"/>
-
-              <!-- Nose Cap (Dark Navy) -->
-              <path d="M120 75 C112 77, 107 84, 105 91 L135 91 C133 84, 128 77, 120 75 Z" fill="#091f36"/>
-
-              <!-- Curved Cockpit Windshield -->
-              <path d="M106 105 C112 98, 128 98, 134 105 L131 112 C125 107, 115 107, 109 112 Z" fill="#091f36"/>
-
-              <!-- Rear OMS Pods & Vertical Tail Stabilizer -->
-              <path d="M100 192 C92 195, 92 215, 94 224 L115 224 L115 190 Z" fill="#f2ead0"/>
-              <path d="M140 192 C148 195, 148 215, 146 224 L125 224 L125 190 Z" fill="#cbbd99"/>
-              <!-- Center Vertical Tail Fin -->
-              <path d="M117 186 L123 186 L124 232 L120 237 L116 232 Z" fill="#091f36"/>
-              <path d="M123 186 L127 192 L126 230 L123 232 Z" fill="#f7f0da"/>
-            </svg>
-          </div>
-
-          <div class="shuttle-telemetry-pill">
-            <span id="starship-alt-tag">0 km</span>
-            <span class="telemetry-sep">·</span>
-            <span id="zone-name">🌍 Launchpad</span>
-          </div>
-        </div>
+      <!-- Zone 5: Deep Space Nebula & Asteroid Belt (400 pts) -->
+      <div class="env-layer layer-nebula" style="bottom: 280vh;">
+        <div class="nebula-glow"></div>
+        <!-- Custom SVG Asteroid Cluster -->
+        <svg class="space-prop prop-asteroid-1" viewBox="0 0 90 70" width="76" height="60">
+          <path d="M18,22 L42,8 L74,16 L84,42 L62,62 L24,58 L8,40 Z" fill="#475569" stroke="#94a3b8" stroke-width="2"/>
+          <circle cx="38" cy="28" r="7" fill="#334155"/>
+          <circle cx="58" cy="42" r="5" fill="#1e293b"/>
+        </svg>
+        <svg class="space-prop prop-asteroid-2" viewBox="0 0 70 70" width="54" height="54">
+          <path d="M14,28 L34,10 L58,20 L62,48 L40,60 L16,50 Z" fill="#64748b" stroke="#cbd5e1" stroke-width="1.5"/>
+          <circle cx="34" cy="34" r="6" fill="#475569"/>
+        </svg>
+        <div class="altitude-marker-line"><span>300,000 KM · CIS-LUNAR DEEP SPACE</span></div>
       </div>
-    </section>
 
-    <!-- Right Column: Minimalist Game Shell -->
-    <div class="shell">
-      <!-- Top Header -->
-      <header class="header">
-        <div class="brand">
-          <span class="brand-dot"></span>
-          <span>MOONSHOT</span>
-          <span class="streak-pill hidden" id="streak-pill">🔥 2x</span>
+      <!-- Zone 4: Low Earth Orbit — Custom SVG Space Station & Satellites (300 pts) -->
+      <div class="env-layer layer-orbit" style="bottom: 205vh;">
+        <svg class="space-prop prop-iss" viewBox="0 0 180 80" width="155" height="70">
+          <!-- Solar Arrays -->
+          <rect x="8" y="12" width="38" height="56" rx="2" fill="#0284c7" stroke="#bae6fd" stroke-width="1.5"/>
+          <line x1="27" y1="12" x2="27" y2="68" stroke="#bae6fd" stroke-width="1"/>
+          <rect x="134" y="12" width="38" height="56" rx="2" fill="#0284c7" stroke="#bae6fd" stroke-width="1.5"/>
+          <line x1="153" y1="12" x2="153" y2="68" stroke="#bae6fd" stroke-width="1"/>
+          <!-- Central Truss & Habitation Modules -->
+          <rect x="46" y="37" width="88" height="6" fill="#94a3b8"/>
+          <rect x="74" y="26" width="32" height="28" rx="6" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+          <circle cx="90" cy="40" r="5" fill="#38bdf8"/>
+        </svg>
+        <div class="altitude-marker-line"><span>200,000 KM · LOW EARTH ORBIT</span></div>
+      </div>
+
+      <!-- Zone 3: Kármán Line & Aurora Borealis Curtains (200 pts) -->
+      <div class="env-layer layer-karman" style="bottom: 135vh;">
+        <div class="aurora-curtain"></div>
+        <div class="aurora-curtain curtain-2"></div>
+        <div class="altitude-marker-line"><span>100,000 KM · KÁRMÁN LINE (EDGE OF SPACE)</span></div>
+      </div>
+
+      <!-- Zone 2: Stratosphere — Custom SVG Weather Balloon & Supersonic Jet (100 pts) -->
+      <div class="env-layer layer-stratosphere" style="bottom: 68vh;">
+        <svg class="space-prop prop-balloon" viewBox="0 0 80 120" width="68" height="102">
+          <path d="M40,8 C62,8 74,26 70,48 C66,68 48,78 40,86 C32,78 14,68 10,48 C6,26 18,8 40,8 Z" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+          <path d="M40,8 C50,8 56,26 54,48 C52,68 44,78 40,86 Z" fill="#fde68a" opacity="0.6"/>
+          <line x1="40" y1="86" x2="40" y2="104" stroke="#cbd5e1" stroke-width="1.5"/>
+          <rect x="33" y="104" width="14" height="10" rx="2" fill="#ea580c"/>
+        </svg>
+
+        <svg class="space-prop prop-jet" viewBox="0 0 120 44" width="105" height="38">
+          <path d="M8,24 L112,24" stroke="rgba(255,255,255,0.35)" stroke-width="3" stroke-dasharray="6 4"/>
+          <polygon points="110,22 78,16 62,4 56,4 66,18 44,20 34,12 30,12 36,22 108,24" fill="#f8fafc"/>
+        </svg>
+
+        <div class="altitude-marker-line"><span>50,000 KM · STRATOSPHERE</span></div>
+      </div>
+
+      <!-- Zone 1: Cape Canaveral Launchpad at Dusk/Night (0 pts) -->
+      <div class="env-layer layer-launchpad" style="bottom: 0;">
+        <!-- Sweeping Launchpad Searchlights -->
+        <div class="searchlight beam-left"></div>
+        <div class="searchlight beam-right"></div>
+
+        <!-- Steel Launch Gantry Tower next to Shuttle -->
+        <svg class="gantry-tower" id="gantry-tower" viewBox="0 0 140 320" width="130" height="295">
+          <rect x="18" y="30" width="10" height="260" fill="#1e293b"/>
+          <rect x="64" y="30" width="10" height="260" fill="#0f172a"/>
+          <!-- Cross Bracing -->
+          <path d="M24,40 L68,80 L24,120 L68,160 L24,200 L68,240 L24,280" stroke="#334155" stroke-width="4" fill="none"/>
+          <path d="M68,40 L24,80 L68,120 L24,160 L68,200 L24,240 L68,280" stroke="#334155" stroke-width="4" fill="none"/>
+          <!-- Umbilical Swing Arm -->
+          <g class="swing-arm" id="swing-arm">
+            <rect x="68" y="105" width="64" height="8" rx="2" fill="#e65c19"/>
+            <circle cx="70" cy="109" r="5" fill="#ffbe3d"/>
+          </g>
+          <!-- Warning Beacon at Top -->
+          <circle cx="46" cy="20" r="6" fill="#f43f5e" class="tower-beacon"/>
+        </svg>
+
+        <!-- Billowing Multi-Layered Vintage Launch Clouds (Matching reference art) -->
+        <svg class="launch-clouds-svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="#fae3a4" opacity="0.95" d="M0,320 L0,150 C60,140 95,180 145,175 C185,130 245,135 275,185 C325,160 395,180 425,225 C475,200 535,215 565,255 L875,255 C915,210 975,200 1025,230 C1065,175 1135,160 1185,195 C1225,135 1295,135 1335,180 C1375,150 1420,155 1440,170 L1440,320 Z"/>
+          <path fill="#f5a638" d="M0,320 L0,200 C70,185 130,210 165,240 C210,195 285,195 330,245 C380,220 445,235 480,275 C540,245 615,260 650,295 L790,295 C835,255 910,245 965,278 C1005,230 1075,220 1125,255 C1175,200 1255,200 1295,245 C1345,210 1400,210 1440,225 L1440,320 Z"/>
+          <path fill="#c94f0f" d="M0,320 L0,255 C65,240 125,255 165,285 C220,245 300,250 345,292 C405,265 480,275 525,308 C595,282 675,292 720,315 C775,290 855,282 915,308 C965,272 1045,265 1100,295 C1155,250 1235,250 1285,288 C1335,258 1395,255 1440,270 L1440,320 Z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 2. Real-Time Particle & Starfield Canvas (4-point stars, cryo steam, billowing exhaust smoke) -->
+    <canvas id="cosmos-canvas"></canvas>
+
+    <!-- 3. Centerpiece Hero: GIANT SPACE SHUTTLE STACK -->
+    <div class="shuttle-centerpiece" id="starship-actor">
+      <div class="boost-callout hidden" id="starship-boost-pop">+50 PTS · MAXIMUM BURN!</div>
+
+      <div class="starship-svg-wrap" id="starship-svg-wrap">
+        <svg class="shuttle-svg" viewBox="0 0 240 360" width="215" height="322" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="mainPlume" x1="120" y1="232" x2="120" y2="358" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ff9914"/>
+              <stop offset="45%" stop-color="#ffbe3d"/>
+              <stop offset="85%" stop-color="#fae3a4"/>
+              <stop offset="100%" stop-color="#fae3a4" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="corePlume" x1="120" y1="235" x2="120" y2="338" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="55%" stop-color="#ffd166"/>
+              <stop offset="100%" stop-color="#ff9914" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Triple Geometric Exhaust Plumes -->
+          <g id="thruster-outer">
+            <path d="M62 236 L50 310 L84 310 L74 236 Z" fill="url(#mainPlume)"/>
+            <path d="M65 236 L58 288 L78 288 L71 236 Z" fill="url(#corePlume)"/>
+            <path d="M166 236 L156 310 L190 310 L178 236 Z" fill="url(#mainPlume)"/>
+            <path d="M169 236 L162 288 L182 288 L175 236 Z" fill="url(#corePlume)"/>
+            <polygon points="96,230 78,356 162,356 144,230" fill="url(#mainPlume)"/>
+            <polygon points="105,230 94,340 146,340 135,230" fill="url(#corePlume)"/>
+            <polygon points="113,230 120,325 127,230" fill="#ff6a00" opacity="0.75"/>
+          </g>
+
+          <!-- Burnt-Orange External Tank -->
+          <path d="M120 14 C96 28, 86 58, 86 88 L86 205 L120 205 Z" fill="#e65c19"/>
+          <path d="M120 14 C144 28, 154 58, 154 88 L154 205 L120 205 Z" fill="#b8420b"/>
+          <rect x="86" y="72" width="68" height="4" fill="#ff7f38" opacity="0.88"/>
+          <rect x="86" y="76" width="68" height="2" fill="#8c2f05" opacity="0.75"/>
+
+          <!-- Left Solid Rocket Booster (SRB) -->
+          <path d="M68 54 L54 80 L54 214 L68 214 Z" fill="#f7f0da"/>
+          <path d="M68 54 L82 80 L82 214 L68 214 Z" fill="#d5c8a8"/>
+          <rect x="54" y="80" width="28" height="3.5" fill="#091f36"/>
+          <rect x="54" y="96" width="28" height="3.5" fill="#091f36"/>
+          <rect x="54" y="210" width="28" height="4" fill="#091f36"/>
+          <path d="M56 214 L51 228 L85 228 L80 214 Z" fill="#f7f0da"/>
+          <rect x="53" y="223" width="30" height="2.5" fill="#091f36"/>
+          <path d="M55 228 L52 237 L84 237 L81 228 Z" fill="#d5c8a8"/>
+
+          <!-- Right Solid Rocket Booster (SRB) -->
+          <path d="M172 54 L158 80 L158 214 L172 214 Z" fill="#f7f0da"/>
+          <path d="M172 54 L186 80 L186 214 L172 214 Z" fill="#cfc19e"/>
+          <rect x="158" y="80" width="28" height="3.5" fill="#091f36"/>
+          <rect x="158" y="96" width="28" height="3.5" fill="#091f36"/>
+          <rect x="158" y="210" width="28" height="4" fill="#091f36"/>
+          <path d="M160 214 L155 228 L189 228 L184 214 Z" fill="#f7f0da"/>
+          <rect x="157" y="223" width="30" height="2.5" fill="#091f36"/>
+          <path d="M159 228 L156 237 L188 237 L185 228 Z" fill="#cfc19e"/>
+
+          <!-- Space Shuttle Orbiter -->
+          <path d="M120 74 C104 78, 98 98, 96 135 L86 168 L36 204 L34 219 L94 224 L146 224 L206 219 L204 204 L154 168 L144 135 C142 98, 136 78, 120 74 Z" fill="#091f36"/>
+          <path d="M98 132 L89 170 L40 205 L40 215 L98 218 Z" fill="#fbf5e3"/>
+          <path d="M142 132 L151 170 L200 205 L200 215 L142 218 Z" fill="#e2d6b5"/>
+          <rect x="40" y="208" width="56" height="4" fill="#091f36"/>
+          <rect x="144" y="208" width="56" height="4" fill="#091f36"/>
+          <path d="M120 78 C108 82, 100 100, 100 128 L100 220 L120 220 Z" fill="#fcf7e8"/>
+          <path d="M120 78 C132 82, 140 100, 140 128 L140 220 L120 220 Z" fill="#d9cca9"/>
+          <path d="M120 75 C112 77, 107 84, 105 91 L135 91 C133 84, 128 77, 120 75 Z" fill="#091f36"/>
+          <path d="M106 105 C112 98, 128 98, 134 105 L131 112 C125 107,115 107, 109 112 Z" fill="#091f36"/>
+          <path d="M100 192 C92 195, 92 215, 94 224 L115 224 L115 190 Z" fill="#f2ead0"/>
+          <path d="M140 192 C148 195, 148 215, 146 224 L125 224 L125 190 Z" fill="#cbbd99"/>
+          <path d="M117 186 L123 186 L124 232 L120 237 L116 232 Z" fill="#091f36"/>
+          <path d="M123 186 L127 192 L126 230 L123 232 Z" fill="#f7f0da"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 4. Left-Edge Arcade Altitude Odometer & Progress Track -->
+    <aside class="hud-altitude-rail">
+      <div class="rail-target">384,400 KM</div>
+      <div class="rail-bar-track">
+        <div class="rail-bar-fill" id="ruler-fill"></div>
+      </div>
+      <div class="rail-odometer">
+        <div class="odo-km" id="starship-alt-tag">0 KM</div>
+        <div class="odo-zone" id="zone-name">LAUNCHPAD</div>
+      </div>
+    </aside>
+
+    <!-- 5. Game HUD Overlay Layer (Top Bar + Bottom Cockpit Console) -->
+    <div class="game-hud">
+      <!-- Top Arcade Bar -->
+      <header class="hud-top-bar">
+        <div class="hud-brand">
+          <div class="hud-logo-mark">
+            <svg viewBox="0 0 24 24" width="18" height="18"><polygon points="12,2 21,19 12,15 3,19" fill="#ff9914"/></svg>
+          </div>
+          <span class="hud-title">MOONSHOT</span>
+          <span class="streak-pill hidden" id="streak-pill">2X STREAK</span>
         </div>
 
-        <div class="header-actions">
-          <div class="seg-control" role="tablist">
-            <button class="seg-btn active" id="btn-mode-daily" type="button">Daily</button>
-            <button class="seg-btn" id="btn-mode-free" type="button">Free Play</button>
+        <!-- 10-Round Pip Crystals (Visible during active game) -->
+        <div class="hud-center-progress hidden" id="altitude-card">
+          <div class="rounds-dots" id="rounds-strip"></div>
+          <div class="hud-score-readout">
+            <span id="altitude-km">0 km</span> · <strong id="score-total">0</strong>/500 PTS
           </div>
-          <button class="circle-btn" id="btn-sound-toggle" type="button" title="Toggle Sound">🔊</button>
-          <button class="circle-btn" id="btn-how-to-play" type="button" title="How to Play">?</button>
+        </div>
+
+        <div class="hud-controls">
+          <div class="arcade-mode-pill">
+            <button class="mode-tab active" id="btn-mode-daily" type="button">DAILY</button>
+            <button class="mode-tab" id="btn-mode-free" type="button">FREE PLAY</button>
+          </div>
+          <button class="hud-icon-btn" id="btn-sound-toggle" type="button" title="Toggle Audio">SFX</button>
+          <button class="hud-icon-btn" id="btn-how-to-play" type="button" title="Game Rules">?</button>
         </div>
       </header>
 
-      <!-- Compact Score & 10-Round Pip Bar (shown once game starts) -->
-      <section class="altitude-bar-card hidden" id="altitude-card">
-        <div class="altitude-top-row">
-          <span class="altitude-zone-label">Mission Progress</span>
-          <div class="altitude-metrics">
-            <span class="altitude-km" id="altitude-km">0 km</span>
-            <span class="altitude-pts"><span id="score-total">0</span> / 500 pts</span>
-          </div>
+      <!-- Milestone Banner -->
+      <div class="milestone-banner hidden" id="milestone-banner">CROSSED THE KÁRMÁN LINE</div>
+
+      <!-- === VIEW A: Pre-Launch Pad Title Overlay (Before Play is Clicked) === -->
+      <section class="title-screen-overlay" id="start-view">
+        <div class="title-badge">REVERSE-RARITY TRIVIA</div>
+        <h1 class="arcade-hero-title">RACE TO THE MOON</h1>
+        <p class="arcade-hero-sub">
+          10 Stages · 1–2 Word Answers · Answer with valid keywords searched <strong>less</strong> on Google this month to fire bigger thruster burns.
+        </p>
+
+        <div class="gem-legend-bar">
+          <div class="gem-chip"><svg width="16" height="16"><use href="#gem-diamond"/></svg><span style="color:var(--diamond)">DIAMOND 50</span></div>
+          <div class="gem-chip"><svg width="16" height="16"><use href="#gem-platinum"/></svg><span style="color:var(--platinum)">PLATINUM 40</span></div>
+          <div class="gem-chip"><svg width="16" height="16"><use href="#gem-gold"/></svg><span style="color:var(--gold)">GOLD 30</span></div>
+          <div class="gem-chip"><svg width="16" height="16"><use href="#gem-silver"/></svg><span style="color:var(--silver)">SILVER 20</span></div>
+          <div class="gem-chip"><svg width="16" height="16"><use href="#gem-bronze"/></svg><span style="color:var(--bronze)">BRONZE 10</span></div>
         </div>
-        <div class="rounds-dots" id="rounds-strip"></div>
+
+        <button type="button" class="arcade-launch-btn" id="btn-start-game">
+          <span class="btn-shine"></span>
+          <span>IGNITE &amp; LAUNCH</span>
+        </button>
       </section>
 
-      <!-- Center Stage Card -->
-      <main class="stage-card">
-        <div class="timer-line-track hidden" id="timer-track">
-          <div class="timer-line-fill" id="timer-bar"></div>
-        </div>
-
-        <!-- Pre-Game Start View -->
-        <div class="start-box" id="start-view">
-          <div class="start-emblem">🚀</div>
-          <h1 class="start-title">Launch to the Moon</h1>
-          <p class="start-desc">
-            10 rounds · 1–2 word answers · 30s per question.<br />
-            Keywords searched <strong>less</strong> on Google this month ignite bigger thruster burns toward the Moon.
-          </p>
-
-          <div class="start-tier-strip">
-            <span style="color:var(--diamond)">💎 50p</span>
-            <span style="color:var(--platinum)">💠 40p</span>
-            <span style="color:var(--gold)">🥇 30p</span>
-            <span style="color:var(--silver)">🥈 20p</span>
-            <span style="color:var(--bronze)">🥉 10p</span>
+      <!-- === VIEW B: Active In-Flight Cockpit Console (Top Question Banner + Bottom Input Dock) === -->
+      <section class="inflight-hud hidden" id="play-view">
+        <!-- Top Translucent Question Banner (Shuttle stays visible in the center!) -->
+        <div class="hud-question-banner">
+          <div class="timer-line-track" id="timer-track">
+            <div class="timer-line-fill" id="timer-bar"></div>
           </div>
 
-          <button type="button" class="play-hero-btn" id="btn-start-game">▶ Play Daily Launch</button>
-        </div>
-
-        <!-- Active Round View -->
-        <div class="hidden" id="play-view">
-          <div class="stage-meta">
-            <span><span id="q-category">Science</span> · Round <span id="round-num">1</span>/10</span>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <button type="button" class="hint-pill-btn" id="btn-hint" title="Reveal a rare keyword hint">💡 Hint</button>
-              <span class="timer-readout" id="timer-seconds">30s</span>
+          <div class="banner-meta-row">
+            <span class="banner-stage-tag"><span id="q-category">SCIENCE</span> // STAGE <span id="round-num">1</span> OF 10</span>
+            <div class="banner-right-tools">
+              <span class="banner-avg-tag">AVG GOOGLE SEARCHES: <strong id="q-avg-searches">245,000</strong>/MO</span>
+              <button type="button" class="hint-pill-btn" id="btn-hint">RARE HINT</button>
+              <span class="arcade-timer" id="timer-seconds">30s</span>
             </div>
           </div>
 
-          <h1 class="prompt-title" id="q-prompt"></h1>
-          <p class="prompt-sub">
-            1–2 words max · Question avg: <strong id="q-avg-searches"></strong> Google searches/mo
-          </p>
-
-          <!-- Rare Hint Box -->
+          <h2 class="banner-prompt-text" id="q-prompt"></h2>
           <div class="hint-banner hidden" id="hint-banner"></div>
+        </div>
+
+        <!-- Bottom Cockpit Command Input Dock -->
+        <div class="cockpit-dock">
+          <!-- Typo Suggestion Prompt ("Are you reffering to this word:") -->
+          <div class="typo-suggestion hidden" id="typo-suggestion-box">
+            <span>Are you reffering to this word:</span>
+            <button type="button" class="typo-word-btn" id="typo-word-btn"></button>
+          </div>
 
           <form id="keyword-form" autocomplete="off">
-            <div class="input-pill" id="input-pill">
+            <div class="cockpit-input-bar" id="input-pill">
               <input
                 type="text"
                 id="keyword-input"
                 class="kw-input"
-                placeholder="Type a rare 1–2 word answer..."
+                placeholder="ENTER 1 OR 2 WORD KEYWORD..."
                 maxlength="40"
               />
-              <span class="word-counter" id="word-count-chip">0/2</span>
-              <button type="submit" class="submit-btn">Ignite</button>
+              <span class="word-counter" id="word-count-chip">0/2 WORDS</span>
+              <button type="submit" class="cockpit-fire-btn">FIRE THRUSTERS</button>
             </div>
 
-            <!-- Typo Suggestion Prompt ("Are you reffering to this word:") -->
-            <div class="typo-suggestion hidden" id="typo-suggestion-box">
-              <span>Are you reffering to this word:</span>
-              <button type="button" class="typo-word-btn" id="typo-word-btn"></button>
-            </div>
-
-            <div class="stage-footer">
+            <div class="cockpit-sub-row">
               <span class="error-toast" id="feedback-msg"></span>
-              <button type="button" class="text-link-btn" id="skip-round-btn">Skip round →</button>
+              <button type="button" class="text-link-btn" id="skip-round-btn">JETTISON STAGE (0 PTS) →</button>
             </div>
           </form>
         </div>
+      </section>
 
-        <!-- Minimalist Post-Round Reveal -->
-        <div class="reveal-box hidden" id="reveal-view">
-          <div class="tier-chip" id="reveal-tier-badge">💎 DIAMOND · +50 PTS</div>
-          <div class="reveal-kw-title" id="reveal-user-kw"></div>
+      <!-- === VIEW C: Post-Burn Telemetry Drawer (Docked at Bottom so you watch the Shuttle climb!) === -->
+      <section class="telemetry-drawer hidden" id="reveal-view">
+        <div class="drawer-card">
+          <div class="drawer-header">
+            <div class="tier-chip" id="reveal-tier-badge">DIAMOND · +50 PTS</div>
+            <div class="reveal-kw-title" id="reveal-user-kw"></div>
+          </div>
+
           <div class="reveal-stat-line" id="reveal-stat-line"></div>
 
           <div class="spectrum-row" id="sample-tiers-grid"></div>
 
-          <button type="button" class="primary-wide-btn" id="next-round-btn">Next Round →</button>
+          <button type="button" class="arcade-next-btn" id="next-round-btn">NEXT STAGE [ENTER] →</button>
         </div>
+      </section>
 
-        <!-- Minimalist End-of-Mission Summary -->
-        <div class="summary-box hidden" id="summary-view">
+      <!-- === VIEW D: Final Mission Flight Log === -->
+      <section class="telemetry-drawer hidden" id="summary-view">
+        <div class="drawer-card summary-card">
           <div>
-            <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary);margin-bottom:6px;" id="summary-rank-title">
-              LUNAR ORBIT COMMANDER
-            </div>
-            <div class="summary-score-big" id="summary-score-big">0 <span style="font-size:1.1rem;color:var(--text-secondary);font-weight:500;">/ 500</span></div>
-            <div style="font-size:0.84rem;color:var(--text-secondary);margin-top:6px;" id="summary-altitude-sub">
-              Reached 0 km altitude
-            </div>
+            <div class="title-badge" id="summary-rank-title">LUNAR ORBIT COMMANDER</div>
+            <div class="summary-score-big" id="summary-score-big">0 <small>/ 500 PTS</small></div>
+            <div class="reveal-stat-line" id="summary-altitude-sub">Reached 0 km altitude</div>
           </div>
 
           <div class="summary-list" id="summary-table-body"></div>
 
           <div class="summary-actions">
-            <button type="button" class="secondary-wide-btn" id="btn-share-score">Copy Score</button>
-            <button type="button" class="primary-wide-btn" id="btn-play-again">Play Again</button>
+            <button type="button" class="secondary-wide-btn" id="btn-share-score">COPY FLIGHT LOG</button>
+            <button type="button" class="arcade-next-btn" id="btn-play-again">NEW MISSION →</button>
           </div>
         </div>
-      </main>
-
-      <!-- Subtle Single-Line Tier Key Footer -->
-      <footer class="footer-tiers">
-        <span class="footer-tier-item"><span class="tier-dot" style="background:var(--diamond)"></span>Diamond 50</span>
-        <span class="footer-tier-item"><span class="tier-dot" style="background:var(--platinum)"></span>Platinum 40</span>
-        <span class="footer-tier-item"><span class="tier-dot" style="background:var(--gold)"></span>Gold 30</span>
-        <span class="footer-tier-item"><span class="tier-dot" style="background:var(--silver)"></span>Silver 20</span>
-        <span class="footer-tier-item"><span class="tier-dot" style="background:var(--bronze)"></span>Bronze 10</span>
-      </footer>
+      </section>
     </div>
   </div>
 
-  <!-- Minimal Rules Modal -->
+  <!-- Game Rules Modal -->
   <div class="modal-backdrop hidden" id="rules-modal">
     <div class="modal-sheet">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3 style="font-size:1.05rem;font-weight:700;">How to Play</h3>
+        <h3 style="font-family:var(--font-display);font-size:1.15rem;letter-spacing:0.06em;">FLIGHT MANUAL</h3>
         <button type="button" class="text-link-btn" id="close-rules-btn" style="font-size:1rem;">✕</button>
       </div>
       <p style="font-size:0.86rem;line-height:1.55;color:var(--text-secondary);">
-        Launch the Space Shuttle from Earth's pad (`0 km`) to the Moon (`384,400 km`) across <strong>10 rounds</strong>. Answer each prompt in <strong>1 or 2 words</strong>. Keywords searched less on Google this month ignite stronger thruster burns:
+        Pilot the Space Shuttle from Cape Canaveral (`0 km`) to the Moon (`384,400 km`) across <strong>10 stages</strong>. Submit a valid <strong>1 or 2 word keyword</strong> within 30 seconds. Keywords with fewer monthly Google searches than the question's average ignite stronger thruster burns:
       </p>
       <div>
-        <div class="modal-tier-row"><span style="color:var(--diamond);font-weight:600;">💎 Diamond</span><span>50 pts · Maximum burn</span></div>
-        <div class="modal-tier-row"><span style="color:var(--platinum);font-weight:600;">💠 Platinum</span><span>40 pts · Deep-space burn</span></div>
-        <div class="modal-tier-row"><span style="color:var(--gold);font-weight:600;">🥇 Gold</span><span>30 pts · Rare burn</span></div>
-        <div class="modal-tier-row"><span style="color:var(--silver);font-weight:600;">🥈 Silver</span><span>20 pts · Standard burn</span></div>
-        <div class="modal-tier-row" style="border:none;"><span style="color:var(--bronze);font-weight:600;">🥉 Bronze</span><span>10 pts · Low burn</span></div>
+        <div class="modal-tier-row"><span style="color:var(--diamond);font-weight:700;"><svg width="14" height="14" style="vertical-align:-2px;margin-right:6px;"><use href="#gem-diamond"/></svg>Diamond</span><span>50 pts · Hyper-burn</span></div>
+        <div class="modal-tier-row"><span style="color:var(--platinum);font-weight:700;"><svg width="14" height="14" style="vertical-align:-2px;margin-right:6px;"><use href="#gem-platinum"/></svg>Platinum</span><span>40 pts · Deep-space burn</span></div>
+        <div class="modal-tier-row"><span style="color:var(--gold);font-weight:700;"><svg width="14" height="14" style="vertical-align:-2px;margin-right:6px;"><use href="#gem-gold"/></svg>Gold</span><span>30 pts · Rare burn</span></div>
+        <div class="modal-tier-row"><span style="color:var(--silver);font-weight:700;"><svg width="14" height="14" style="vertical-align:-2px;margin-right:6px;"><use href="#gem-silver"/></svg>Silver</span><span>20 pts · Standard burn</span></div>
+        <div class="modal-tier-row" style="border:none;"><span style="color:var(--bronze);font-weight:700;"><svg width="14" height="14" style="vertical-align:-2px;margin-right:6px;"><use href="#gem-bronze"/></svg>Bronze</span><span>10 pts · Low burn</span></div>
       </div>
     </div>
   </div>
 
-  <script src="questions.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="questions.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
