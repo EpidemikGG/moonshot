@@ -2391,3 +2391,69 @@ window.QUESTION_BANK = [
   }
 ];
 
+// === Difficulty Rebalancer (Friendly Curve) ===
+// Makes Silver & Gold much easier to obtain and Platinum more accessible,
+// while keeping only the top 3-4 most obvious answers per question in Bronze.
+(function rebalanceDifficulty() {
+  if (!window.QUESTION_BANK) return;
+
+  window.QUESTION_BANK.forEach((q) => {
+    // Sort answers from highest search volume to lowest
+    q.answers.sort((a, b) => b.v - a.v);
+
+    // Group answers by distinct original search volume so synonyms/aliases share the exact same rank
+    const distinctVolumes = [];
+    const rankMap = new Map();
+    q.answers.forEach((ans) => {
+      if (!rankMap.has(ans.v)) {
+        rankMap.set(ans.v, distinctVolumes.length);
+        distinctVolumes.push(ans.v);
+      }
+    });
+
+    const totalDistinct = distinctVolumes.length;
+    const avg = q.avgSearches || 200000;
+
+    q.answers.forEach((ans) => {
+      const rankIdx = rankMap.get(ans.v); // 0 = most searched
+      const pct = rankIdx / Math.max(1, totalDistinct - 1); // 0.0 -> 1.0
+
+      // Only the top 3 most obvious answers stay Bronze
+      if (rankIdx <= 2 && pct < 0.12) {
+        ans.t = "BRONZE";
+        // Ensure Bronze volume displays above the question average
+        if (ans.v <= avg) ans.v = Math.round(avg * (1.45 - pct));
+      } else if (rankIdx <= 7 && pct < 0.24) {
+        // Common everyday answers -> Silver (20 pts)
+        ans.t = "SILVER";
+        // Calibrate volume right around the question average
+        const ratio = 1.12 - ((rankIdx - 3) / 6) * 0.22;
+        ans.v = Math.round(avg * Math.max(0.88, ratio));
+      } else if (rankIdx <= 17 && pct < 0.50) {
+        // Familiar well-known answers -> Gold (30 pts)
+        ans.t = "GOLD";
+        // Calibrate volume clearly below the question average (42% - 82% of avg)
+        const progress = Math.min(1, Math.max(0, (pct - 0.18) / 0.32));
+        const ratio = 0.80 - progress * 0.38;
+        ans.v = Math.round(avg * Math.max(0.40, ratio));
+      } else if (rankIdx <= 28 && pct < 0.76) {
+        // Clever / moderately uncommon answers -> Platinum (40 pts)
+        ans.t = "PLATINUM";
+        // Calibrate volume far below average (12% - 35% of avg)
+        const progress = Math.min(1, Math.max(0, (pct - 0.48) / 0.28));
+        const ratio = 0.34 - progress * 0.22;
+        ans.v = Math.round(avg * Math.max(0.11, ratio));
+      } else {
+        // Niche & deep-cut answers -> Diamond (50 pts)
+        ans.t = "DIAMOND";
+        if (ans.v > avg * 0.08) {
+          const progress = Math.min(1, Math.max(0, (pct - 0.74) / 0.26));
+          const ratio = 0.065 - progress * 0.055;
+          ans.v = Math.round(avg * Math.max(0.006, ratio));
+        }
+      }
+    });
+  });
+})();
+
+
